@@ -1,0 +1,10 @@
+.hg-theme-default {
+    background-color:#666;
+}
+.hg-theme-default .hg-button {
+    background-color:black;
+}
+
+.hg-theme-default .hg-button.hg-activeButton {
+    background-color:#555;
+}

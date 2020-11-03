@@ -1,6 +1,5 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 import "virtual-keyboard";
@@ -12,6 +11,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 
 import '@fortawesome/fontawesome-free/css/all.css';
 
+import './index.css';
 
 //Expose jquery to all scripts
 window.jQuery = $;
