@@ -8,3 +8,23 @@
 .hg-theme-default .hg-button.hg-activeButton {
     background-color:#555;
 }
+
+
+.topnav, .nav-link, .dropdown-menu, .dropdown-item  {
+    color:rgba(255,255,255,.5);
+    background-color:#343a40;
+}
+
+a:hover {
+    color:rgba(255,255,255,1);
+}
+
+#tabs {
+    background-color:#878f99;
+    position:absolute;
+    bottom:0;
+    left:0;
+    right:0;
+    height:50vh;
+}
+

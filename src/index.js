@@ -2,12 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
-import "virtual-keyboard";
-import 'jquery-ui';
 import $ from "jquery";
-
-import 'bootstrap';
-import 'bootstrap/dist/css/bootstrap.min.css';
 
 import '@fortawesome/fontawesome-free/css/all.css';
 
