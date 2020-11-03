@@ -53,6 +53,7 @@
     "postcss-normalize": "8.0.1",
     "postcss-preset-env": "6.7.0",
     "postcss-safe-parser": "5.0.2",
+    "pullstate": "^1.20.1",
     "react": "^17.0.1",
     "react-app-polyfill": "^2.0.0",
     "react-bootstrap": "^1.4.0",

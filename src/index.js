@@ -14,9 +14,11 @@ window.$ = $;
 
 
 ReactDOM.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
+  //Can't run in strict mode, thanks to react-bootstrap!
+  //<React.StrictMode>
+  <App />
+  //</React.StrictMode>
+  ,
   document.getElementById('root')
 );
 
