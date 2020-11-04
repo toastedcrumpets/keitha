@@ -10,7 +10,8 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 
 const AppStore = new Store({
-  triggerMode:2,  
+  triggerMode:2,
+  currentReading:0.123456
 });
 
 
@@ -43,14 +44,26 @@ function TopMenu() {
   </Nav>;
 }
 
+function LargeDisplay() {
+  const reading = AppStore.useState(s => s.currentReading);
+  const rstr = reading.toFixed(6);
+  var output = "";
+  if (reading >= 0)
+    output += '+';
+  output += rstr;
+  output += " mV"
+  return <div id="MainDisplay" className="text-monospace">
+    {output}
+  </div>;
+
+}
+
 function App() {
   return (
     <KeyboardProvider>
       <TopMenu/>
       <main role="main" className="">
-	<div id="MainDisplay" className="text-monospace">
-	  +0.00000000 mV
-	</div>
+	<LargeDisplay/>
 	<div id="tabs">
 	  <Tabs >
 	    <Tab eventKey="mode" title="Mode">
