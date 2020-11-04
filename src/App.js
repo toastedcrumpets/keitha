@@ -14,6 +14,9 @@ const AppStore = new Store({
   currentReading:0.123456
 });
 
+const io = require('socket.io-client');
+const socket = io('http://localhost:8080');
+
 
 function TriggerButton(trigMode) {
   //Render the trigger button depending on the mode
