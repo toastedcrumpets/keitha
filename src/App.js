@@ -18,7 +18,7 @@ const AppStore = new Store({
   currentReading:0.123456
 });
 
-const socket = socketIOClient('http://localhost:8080'); //By default it connects to the site being served
+const socket = socketIOClient(); //By default it connects to the site being served
 
 socket.on('disconnect', (reason) => {
   AppStore.update(s => {s.connected = false; s.connect_status = "Disconnected"});

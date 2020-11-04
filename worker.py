@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 from aiohttp import web
 import socketio
 import time
