@@ -1,0 +1,15 @@
+[Unit]
+Description=Keitha Server
+After=multi-user.target
+
+[Service]
+User=pi
+Group=pi
+Type=idle
+WorkingDirectory=/home/pi/keitha
+ExecStart=/usr/bin/python3 /home/pi/keitha/server.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+

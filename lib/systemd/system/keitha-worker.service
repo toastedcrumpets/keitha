@@ -1,0 +1,14 @@
+[Unit]
+Description=Keitha Worker
+
+[Service]
+User=pi
+Group=pi
+Type=idle
+WorkingDirectory=/home/pi/keitha
+ExecStart=/usr/bin/python3 /home/pi/keitha/worker.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+
