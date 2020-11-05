@@ -1,39 +1,66 @@
 #!/usr/bin/python3
-from aiohttp import web
+import asyncio
 import socketio
 import time
 import random
 
-sio = socketio.Client(reconnection=True, reconnection_attempts=0)
-@sio.event
-def connect():
-    print('Worker thread connected')
+debug=True
 
-@sio.event
-def disconnect():
-    print('Worker thread disconnected')
-
-status = {
+conf_state = {
     'triggerMode':0,
 }
 
-#We merge status changes when 
-@sio.on('status_change')
-def status_change(payload):
-    print("Worker status_change", payload)
-    status.update(payload)
+sio = socketio.AsyncClient(reconnection=True, reconnection_attempts=0)
 
-time.sleep(2)
-sio.connect('http://localhost:8080')
+@sio.event
+async def connect():
+    #Register for configuration updates
+    await sio.emit('conf_state_sub')
+    if debug:
+        print('Worker thread connected')
 
-while True:
-    if status['triggerMode'] > 0:
-        value = random.uniform(0, 1)
-        sio.emit('reading', value)
-        if status['triggerMode'] == 1:
-            sio.emit('status_change', {'triggerMode':0})
-            status['triggerMode'] = 0
+@sio.event
+async def connect_error(message):
+    if debug:
+        print('Connection error:', message)
+        
+@sio.event
+def disconnect():
+    if debug:
+        print('Worker thread disconnected')
 
-    sio.sleep(0.01)
+@sio.event    
+async def conf_state_update(payload):
+    if debug:
+        print("Conf update ", payload)
+    conf_state.update(payload)
+
+async def main():
+    #The first connection is never retried if it fails (later
+    #disconnects are though), so we have to handle initial reconnects
+    #ourselves
+    connected = False
+    while not connected:
+        try:
+            await sio.connect('http://localhost:8080')
+            connected = True
+        except socketio.exceptions.ConnectionError as err:
+            if debug:
+                print("ConnectionError: %s" % err)
+            #Sleep 5s before retrying
+            await sio.sleep(5)
+    
+    while True:
+        if conf_state['triggerMode'] > 0:
+            await sio.emit('readings_state_add', [(time.perf_counter(), random.uniform(0, 1))])
+            if conf_state['triggerMode'] == 1:
+                await sio.emit('conf_state_update', {'triggerMode':0})
+                #We have to do this to prevent extra readings while
+                #waiting for the server to change the state
+                conf_state['triggerMode'] = 0
+
+        await sio.sleep(0.01)
+
+asyncio.run(main())
     #This is the main event loop.
         

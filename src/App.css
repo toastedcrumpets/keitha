@@ -28,3 +28,12 @@ a:hover {
     height:50vh;
 }
 
+
+
+.stats-table {
+    table-layout:fixed;
+}
+
+.stats-table td:nth-child(2n+1) {
+    text-align:right;
+}
