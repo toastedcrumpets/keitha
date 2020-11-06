@@ -34,6 +34,6 @@ a:hover {
     table-layout:fixed;
 }
 
-.stats-table td:nth-child(2n+1) {
+.stats-table .col:nth-child(2n+1) {
     text-align:right;
 }

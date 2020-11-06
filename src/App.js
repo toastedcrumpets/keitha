@@ -6,7 +6,7 @@ import socketIOClient from 'socket.io-client';
 
 import { KeyboardProvider, Input } from './Keyboard';
 
-import { Table, Nav, NavItem, NavLink, Dropdown, Tabs, Tab } from 'react-bootstrap';
+import { Button, Container, Row, Col, Nav, NavItem, NavLink, Dropdown, Tabs, Tab } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 import './App.css';
@@ -30,11 +30,11 @@ function TriggerButton(trigMode) {
   //Render the trigger button depending on the mode
   switch (trigMode) {
     case 0:
-      return (<React.Fragment><i className="fas fa-stop"></i><span> Hold</span></React.Fragment>);
+      return (<><i className="fas fa-stop"></i><span> Hold</span></>);
     case 1:
-      return (<React.Fragment><i className="fas fa-camera"></i><span> Single</span></React.Fragment>);
+      return (<><i className="fas fa-camera"></i><span> Single</span></>);
     case 2:
-      return (<React.Fragment><i className="fas fa-sync fa-spin"></i><span> Continuous</span></React.Fragment>);
+      return (<><i className="fas fa-sync fa-spin"></i><span> Continuous</span></>);
     default:
       throw Error("Invalid trigger mode");
   };
@@ -85,37 +85,59 @@ function LargeDisplay() {
 
 
 function StatisticsPages() {
-  const {min, max, sum, sum_sq, N} = AppStore.useState(s => ({min:s.buf_state.min, max:s.buf_state.max, sum:s.buf_state.sum, sum_sq:s.buf_state.sum_sq, N:s.readings_state.length}));
+  var {min, max, sum, sum_sq, N} = AppStore.useState(s => ({min:s.buf_state.min, max:s.buf_state.max, sum:s.buf_state.sum, sum_sq:s.buf_state.sum_sq, N:s.readings_state.length}));
 
   var avg = sum / N;
   var stddev = Math.sqrt(sum_sq / N - avg * avg);
 
   avg = avg.toString();
   stddev = stddev.toString();
-  
-  return (
-    <Table striped bordered hover className="stats-table">
-      <tbody>
-	<tr>
-	  <td>Peak to Peak:</td>
-	  <td>{(max - min).toString()}</td>
-	  <td>Span:</td>
-	  <td>{N.toString()} readings</td>
-	</tr>
-	<tr>
-	  <td>Average:</td>
-	  <td>{avg}</td>
-	  <td>Standard Dev:</td>
-	  <td>{stddev}</td>
-	</tr>
-	<tr>
-	  <td>Maximum:</td>
-	  <td>{max.toString()}</td>
-	  <td>Minimum:</td>
-	  <td>{min.toString()}</td>
-	</tr>
-      </tbody>
-    </Table>);
+
+    var PtP = (max - min).toString();
+    min = min.toString();
+    max = max.toString();
+
+    if (N === 0) {
+	PtP = "-"
+	min = "-";
+	max = "-";
+	avg = "-";
+	stddev = "-";
+    }
+  return <>
+   <Container className="stats-table" fluid>
+      <Row>
+	  <Col>Peak to Peak:</Col>
+	  <Col>{PtP}</Col>
+	  <Col>Span:</Col>
+	  <Col>{N.toString()} readings</Col>
+      </Row>
+	<Row>
+	  <Col>Average:</Col>
+	  <Col>{avg}</Col>
+	  <Col>Standard Dev:</Col>
+	  <Col>{stddev}</Col>
+	</Row>
+	<Row>
+	  <Col>Maximum:</Col>
+	  <Col>{max}</Col>
+	  <Col>Minimum:</Col>
+	  <Col>{min}</Col>
+	</Row>
+	  </Container>
+	  <Container fluid>
+	<Row>
+	  <Col>
+	  </Col>
+	  <Col>
+	  </Col>
+	  <Col>
+	<Button variant="warning" onClick={() => socket.emit('readings_state_update', [])}>Clear buffer</Button>
+	  </Col>	 
+	</Row>
+	</Container>
+	</>
+	;
 }
 
 var socket = null

@@ -104,9 +104,19 @@ async def readings_state_update(sid, payload):
     if debug:
         print("Readings update", sid, payload)
     readings_state = payload
-    
-    
     await sio.emit('readings_state_update', readings_state, room='readings_state')
+    #Update the readings status
+    values = list(map(lambda x : x[1], payload))
+    if len(payload):
+        buf_state['min'] = min(values)
+        buf_state['max'] = max(values)
+    else:
+        buf_state['min'] = 1e300
+        buf_state['max'] = -1e300
+        
+    buf_state['sum'] = sum(values)
+    buf_state['sum_sq'] = sum(map(lambda x : x[1]*x[1], values))
+    await sio.emit('buf_state_update', buf_state, room='buf_state')    
     
 app.router.add_static('/', 'build')
 
