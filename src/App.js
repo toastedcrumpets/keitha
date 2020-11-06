@@ -9,9 +9,10 @@ import { KeyboardProvider, Input } from './Keyboard';
 import { Button, Container, Row, Col, Nav, NavItem, NavLink, Dropdown, Tabs, Tab } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-import Plotly from 'plotly.js-dist';
-import createPlotlyComponent from 'react-plotly.js/factory';
-const Plot = createPlotlyComponent(Plotly);
+//Need to load plotly this way, as loading it "normally" causes a heap over-size error.
+//import Plotly from 'plotly.js-dist';
+//import createPlotlyComponent from 'react-plotly.js/factory';
+//const Plot = createPlotlyComponent(Plotly);
 
 import './App.css';
 
@@ -228,20 +229,7 @@ function App() {
 	    <Tab eventKey="config" title="Config">
 	      <Input onChange={ (text) => {} } />
 	    </Tab>
-	  <Tab eventKey="graph" title="Graph">
-	  <Plot data = {[
-	      {
-		  x: timings_state,
-		  y: readings_state,
-		  type: "scattergl",
-		  mode: "line",
-	      }
-	  ]}
-      layout={{
-	  width:1024,
-	  height:300,
-	  
-      }} />
+	    <Tab eventKey="graph" title="Graph">
 	    </Tab>
 	  </Tabs>
 	</div>
