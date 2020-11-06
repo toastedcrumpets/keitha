@@ -9,6 +9,10 @@ import { KeyboardProvider, Input } from './Keyboard';
 import { Button, Container, Row, Col, Nav, NavItem, NavLink, Dropdown, Tabs, Tab } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
+import Plotly from 'plotly.js-dist';
+import createPlotlyComponent from 'react-plotly.js/factory';
+const Plot = createPlotlyComponent(Plotly);
+
 import './App.css';
 
 const AppStore = new Store({
@@ -23,8 +27,14 @@ const AppStore = new Store({
   },
   connected:false,
   connect_status:"Connecting...",
-  readings_state:[],
+  last_reading:undefined,
+  last_time:undefined,
 });
+
+///// The actual measurements
+//We don't store large data inside the state/pullstate/immer for performance reasons
+var readings_state = [];
+var timings_state = [];
 
 function TriggerButton(trigMode) {
   //Render the trigger button depending on the mode
@@ -69,14 +79,16 @@ function TopMenu() {
 }
 
 function LargeDisplay() {
-  const reading = AppStore.useState(s => s.readings_state[s.readings_state.length-1]);
+  const reading = AppStore.useState(s => s.last_reading);
   var start = "";
-  if (reading === undefined)
-    start = "+-.------";
-  else if (reading[1] > 0)
-    start = "+"+reading[1].toFixed(6);
-  else
-    start = reading[1].toFixed(6);
+  if (reading === undefined) {
+      start = "+-.------";
+  } else if (reading > 0) {
+	  start = "+"+reading.toFixed(6);
+      } else { 
+	  console.log(reading);
+	  start = reading.toFixed(6);
+      }
   return (<div id="MainDisplay" className="text-monospace">
     { start + " mV" }
   </div>);
@@ -85,8 +97,8 @@ function LargeDisplay() {
 
 
 function StatisticsPages() {
-  var {min, max, sum, sum_sq, N} = AppStore.useState(s => ({min:s.buf_state.min, max:s.buf_state.max, sum:s.buf_state.sum, sum_sq:s.buf_state.sum_sq, N:s.readings_state.length}));
-
+  var {min, max, sum, sum_sq} = AppStore.useState(s => ({min:s.buf_state.min, max:s.buf_state.max, sum:s.buf_state.sum, sum_sq:s.buf_state.sum_sq}));
+  const N = readings_state.length;
   var avg = sum / N;
   var stddev = Math.sqrt(sum_sq / N - avg * avg);
 
@@ -132,7 +144,7 @@ function StatisticsPages() {
 	  <Col>
 	  </Col>
 	  <Col>
-	<Button variant="warning" onClick={() => socket.emit('readings_state_update', [])}>Clear buffer</Button>
+	<Button variant="warning" onClick={() => socket.emit('readings_state_update', [[], []])}>Clear buffer</Button>
 	  </Col>	 
 	</Row>
 	</Container>
@@ -143,7 +155,6 @@ function StatisticsPages() {
 var socket = null
 
 function App() {
-
   useEffect(() => {
     //The python backend is always at 8080; however, we like developing
     //with the `npm start` server as it automatically updates the pages (and
@@ -181,14 +192,21 @@ function App() {
     });
 
     socket.on('readings_state_add', (payload) => {
+	timings_state.push( ...payload[0]);
+	readings_state.push(...payload[1]);
+	
       AppStore.update(s => {
-	s.readings_state.push(...payload);
+	s.last_time    = timings_state[timings_state.length - 1];
+	s.last_reading = readings_state[readings_state.length - 1];
       });
     });
 
     socket.on('readings_state_update', (payload) => {
+	timings_state = payload[0];
+	readings_state = payload[1];
       AppStore.update(s => {
-	s.readings_state = payload;
+	s.last_time    = timings_state[timings_state.length - 1];
+	s.last_reading = readings_state[readings_state.length - 1];
       });
     });
     
@@ -210,7 +228,20 @@ function App() {
 	    <Tab eventKey="config" title="Config">
 	      <Input onChange={ (text) => {} } />
 	    </Tab>
-	    <Tab eventKey="graph" title="Graph">
+	  <Tab eventKey="graph" title="Graph">
+	  <Plot data = {[
+	      {
+		  x: timings_state,
+		  y: readings_state,
+		  type: "scattergl",
+		  mode: "line",
+	      }
+	  ]}
+      layout={{
+	  width:1024,
+	  height:300,
+	  
+      }} />
 	    </Tab>
 	  </Tabs>
 	</div>

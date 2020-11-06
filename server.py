@@ -27,7 +27,7 @@ buf_state = {
     'max':-1e300,
 }
 
-readings_state=[]
+readings_state= [ [], [] ]
 
 ########### Connections/Disconnections
 @sio.event
@@ -89,14 +89,14 @@ async def readings_state_add(sid, payload):
     if debug:
         print("Readings add", sid, payload)
     #Add the readings
-    readings_state.extend(payload)
+    readings_state[0].extend(payload[0])
+    readings_state[1].extend(payload[1])
     await sio.emit('readings_state_add', payload, room='readings_state')
     #Update the readings status
-    values = list(map(lambda x : x[1], payload))
-    buf_state['min'] = min(buf_state['min'], min(values))
-    buf_state['max'] = max(buf_state['max'], max(values))
-    buf_state['sum'] += sum(values)
-    buf_state['sum_sq'] += sum(map(lambda x : x[1]*x[1], payload))
+    buf_state['min'] = min(buf_state['min'], min(payload[1]))
+    buf_state['max'] = max(buf_state['max'], max(payload[1]))
+    buf_state['sum'] += sum(payload[1])
+    buf_state['sum_sq'] += sum(map(lambda x : x * x, payload[1]))
     await sio.emit('buf_state_update', buf_state, room='buf_state')
 
 @sio.event    
@@ -106,16 +106,15 @@ async def readings_state_update(sid, payload):
     readings_state = payload
     await sio.emit('readings_state_update', readings_state, room='readings_state')
     #Update the readings status
-    values = list(map(lambda x : x[1], payload))
-    if len(payload):
-        buf_state['min'] = min(values)
-        buf_state['max'] = max(values)
+    if len(payload[1]):
+        buf_state['min'] = min(payload[1])
+        buf_state['max'] = max(payload[1])
     else:
         buf_state['min'] = 1e300
         buf_state['max'] = -1e300
         
-    buf_state['sum'] = sum(values)
-    buf_state['sum_sq'] = sum(map(lambda x : x[1]*x[1], values))
+    buf_state['sum'] = sum(payload[1])
+    buf_state['sum_sq'] = sum(map(lambda x : x*x, payload[1]))
     await sio.emit('buf_state_update', buf_state, room='buf_state')    
     
 app.router.add_static('/', 'build')

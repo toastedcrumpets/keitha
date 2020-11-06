@@ -14,7 +14,10 @@ conf_state = {
 
 FPS = 30
 
-unsent_readings = []
+unsent_readings = [
+    [],
+    []
+]
 
 ############# Communications 
 
@@ -46,9 +49,9 @@ async def conf_state_update(payload):
 ############# Periodic upload of readings
 async def send_readings():
     global unsent_readings
-    if len(unsent_readings):
+    if len(unsent_readings[0]):
         payload = unsent_readings
-        unsent_readings = []
+        unsent_readings = [[], []]
         await sio.emit('readings_state_add', payload)
         if debug:
             print("Uploading readings")
@@ -58,7 +61,8 @@ async def send_readings():
 async def make_reading():
     global unsent_readings
     if conf_state['triggerMode'] > 0:
-        unsent_readings.append((time.perf_counter(), random.uniform(0, 1)))
+        unsent_readings[0].append(time.perf_counter())
+        unsent_readings[1].append(random.uniform(0, 1))
         if conf_state['triggerMode'] == 1:
             #We have to do this now to prevent extra readings while
             #waiting for the server to change the state
