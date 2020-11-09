@@ -26,6 +26,7 @@ const ModuleNotFoundPlugin = require('react-dev-utils/ModuleNotFoundPlugin');
 const ForkTsCheckerWebpackPlugin = require('react-dev-utils/ForkTsCheckerWebpackPlugin');
 const typescriptFormatter = require('react-dev-utils/typescriptFormatter');
 const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
+const CopyPlugin = require('copy-webpack-plugin');
 
 const postcssNormalize = require('postcss-normalize');
 
@@ -715,6 +716,14 @@ module.exports = function (webpackEnv) {
           },
         },
       }),
+	new CopyPlugin({
+	    patterns: [
+		{ 
+		    from: path.join(paths.appNodeModules, 'plotly.js', 'dist', 'plotly.min.js'),
+		    to: 'static/js'
+		}
+	    ],
+        }),
     ].filter(Boolean),
     // Some libraries import Node modules but don't use them in the browser.
     // Tell webpack to provide empty mocks for them so importing them works.
@@ -730,6 +739,17 @@ module.exports = function (webpackEnv) {
     },
     // Turn off performance processing because we utilize
     // our own hints via the FileSizeReporter
-    performance: false,
+      performance: false,
+
+    externals: [
+      function(context, request, callback) {
+        if(request === 'plotly.js/dist/plotly') {
+          callback(null, 'window.Plotly');
+        } else {
+          callback();
+        }
+      }
+    ],
+      
   };
 };

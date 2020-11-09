@@ -2,7 +2,7 @@
 from aiohttp import web
 import socketio
 
-debug=False
+debug=True
 
 #######################################################
 ############         SERVER                 ###########
@@ -47,7 +47,7 @@ async def disconnect(sid):
 @sio.event
 async def conf_state_sub(sid):
     if debug:
-        print("Subscripe conf ", sid)
+        print("Subscribe conf ", sid)
     #On subscription, broadcast the full state
     sio.enter_room(sid, 'conf_state')
     await sio.emit('conf_state_update', conf_state, to=sid)
@@ -63,7 +63,7 @@ async def conf_state_update(sid, payload):
 @sio.event
 async def buf_state_sub(sid):
     if debug:
-        print("Subscripe buf ", sid)
+        print("Subscribe buf ", sid)
     #On subscription, broadcast the full state
     sio.enter_room(sid, 'buf_state')
     await sio.emit('buf_state_update', buf_state, to=sid)
@@ -79,7 +79,7 @@ async def buf_state_update(sid, payload):
 @sio.event
 async def readings_state_sub(sid):
     if debug:
-        print("Subscripe readings ", sid)
+        print("Subscribe readings ", sid)
     #On subscription, broadcast the full state
     sio.enter_room(sid, 'readings_state')
     await sio.emit('readings_state_update', readings_state, to=sid)

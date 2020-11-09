@@ -1,3 +1,19 @@
+body {
+    background-color:black;
+    color:white;
+    overflow:hidden;
+    font-weight:500;
+    font-size:1.5rem;
+}
+
+.dropdown-menu {
+    font-size:1.5rem;
+}
+
+main {
+    height:100vh;
+}
+
 .hg-theme-default {
     background-color:#666;
 }
@@ -9,14 +25,20 @@
     background-color:#555;
 }
 
-
 .topnav, .nav-link, .dropdown-menu, .dropdown-item  {
-    color:rgba(255,255,255,.5);
+    color:rgba(255,255,255,.8);
     background-color:#343a40;
 }
 
+.topnav {
+    position:absolute;
+    top:0;
+    left:0;
+    right:0;
+}
+
 a:hover {
-    color:rgba(255,255,255,1);
+    color:rgba(255,255,255,0.8);
 }
 
 #tabs {
@@ -25,10 +47,14 @@ a:hover {
     bottom:0;
     left:0;
     right:0;
-    height:50vh;
+    height:60vh;
+    transition: height 1s ease 0s;
+
 }
 
-
+#tabs.minimized {
+    height:53px;
+}
 
 .stats-table {
     table-layout:fixed;
@@ -36,4 +62,32 @@ a:hover {
 
 .stats-table .col:nth-child(2n+1) {
     text-align:right;
+}
+
+
+#MainDisplay {
+    color:LightGreen;
+    font-size:5.5em;
+    padding-top:40px;
+    transition:font-size 1s ease 0s;
+    text-align:right;
+}
+
+#MainDisplay.minimized {
+    font-size:7.5em;    
+}   
+
+#tabs .tab-content, #tabs nav {
+    background-color:#878f99;
+}
+
+.js-plotly-plot .plotly .modebar-btn    {
+    font-size:24px !important;
+}
+
+#tab-minimize {
+    position:absolute;
+    top:0;
+    right:0;
+    padding:0.5em;
 }

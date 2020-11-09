@@ -10,13 +10,14 @@ import { Button, Container, Row, Col, Nav, NavItem, NavLink, Dropdown, Tabs, Tab
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 //Need to load plotly this way, as loading it "normally" causes a heap over-size error.
-//import Plotly from 'plotly.js-dist';
-//import createPlotlyComponent from 'react-plotly.js/factory';
-//const Plot = createPlotlyComponent(Plotly);
+import Plot from 'react-plotly.js';
 
 import './App.css';
 
 const AppStore = new Store({
+  ui_state: {
+    tabs_minimised: false,
+  },
   conf_state: {
     triggerMode:0,    
   },
@@ -30,6 +31,7 @@ const AppStore = new Store({
   connect_status:"Connecting...",
   last_reading:undefined,
   last_time:undefined,
+  datarevision:0, 
 });
 
 ///// The actual measurements
@@ -80,17 +82,19 @@ function TopMenu() {
 }
 
 function LargeDisplay() {
-  const reading = AppStore.useState(s => s.last_reading);
+  const { reading, tabs_minimised } = AppStore.useState(s => ({
+    reading:s.last_reading, tabs_minimised:s.ui_state.tabs_minimised }));
+  
   var start = "";
   if (reading === undefined) {
-      start = "+-.------";
+    start = "+-.------";
   } else if (reading > 0) {
-	  start = "+"+reading.toFixed(6);
-      } else { 
-	  console.log(reading);
-	  start = reading.toFixed(6);
-      }
-  return (<div id="MainDisplay" className="text-monospace">
+    start = "+"+reading.toFixed(6);
+  } else { 
+    console.log(reading);
+    start = reading.toFixed(6);
+  }
+  return (<div id="MainDisplay" className={"text-monospace " + (tabs_minimised ? 'minimized': '')}>
     { start + " mV" }
   </div>);
 
@@ -106,54 +110,89 @@ function StatisticsPages() {
   avg = avg.toString();
   stddev = stddev.toString();
 
-    var PtP = (max - min).toString();
-    min = min.toString();
-    max = max.toString();
+  var PtP = (max - min).toString();
+  min = min.toString();
+  max = max.toString();
 
-    if (N === 0) {
-	PtP = "-"
-	min = "-";
-	max = "-";
-	avg = "-";
-	stddev = "-";
-    }
+  if (N === 0) {
+    PtP = "-"
+    min = "-";
+    max = "-";
+    avg = "-";
+    stddev = "-";
+  }
   return <>
-   <Container className="stats-table" fluid>
+    <Container className="stats-table p-1" fluid>
       <Row>
-	  <Col>Peak to Peak:</Col>
-	  <Col>{PtP}</Col>
-	  <Col>Span:</Col>
-	  <Col>{N.toString()} readings</Col>
+	<Col>Peak to Peak:</Col>
+	<Col>{PtP}</Col>
+	<Col>Span:</Col>
+	<Col>{N.toString()} readings</Col>
       </Row>
-	<Row>
-	  <Col>Average:</Col>
-	  <Col>{avg}</Col>
-	  <Col>Standard Dev:</Col>
-	  <Col>{stddev}</Col>
-	</Row>
-	<Row>
-	  <Col>Maximum:</Col>
-	  <Col>{max}</Col>
-	  <Col>Minimum:</Col>
-	  <Col>{min}</Col>
-	</Row>
-	  </Container>
-	  <Container fluid>
-	<Row>
-	  <Col>
-	  </Col>
-	  <Col>
-	  </Col>
-	  <Col>
-	<Button variant="warning" onClick={() => socket.emit('readings_state_update', [[], []])}>Clear buffer</Button>
-	  </Col>	 
-	</Row>
-	</Container>
-	</>
-	;
+      <Row>
+	<Col>Average:</Col>
+	<Col>{avg}</Col>
+	<Col>Standard Dev:</Col>
+	<Col>{stddev}</Col>
+      </Row>
+      <Row>
+	<Col>Maximum:</Col>
+	<Col>{max}</Col>
+	<Col>Minimum:</Col>
+	<Col>{min}</Col>
+      </Row>
+    </Container>
+    <Container fluid>
+      <Row>
+	<Col>
+	</Col>
+	<Col>
+	</Col>
+	<Col>
+	  <Button variant="warning" onClick={() => socket.emit('readings_state_update', [[], []])}>Clear buffer</Button>
+	</Col>	 
+      </Row>
+    </Container>
+  </>
+  ;
 }
 
 var socket = null
+
+function DataGraph() {
+  var datarevision = AppStore.useState(s => s.datarevision);
+  
+  return <Plot
+	   data={[
+	     {
+	       x: timings_state,
+	       y: readings_state,
+	       type: 'scattergl',
+	       mode: 'lines+markers',
+	       marker: {color: 'lightgreen'},
+	     },
+	   ]}
+	   layout={ {
+	     width: 1024,
+	     height: 250,
+	     datarevision:datarevision,
+	     paper_bgcolor:'rgba(0,0,0,0)',
+	     plot_bgcolor:'rgba(0,0,0,0)',
+	     margin: {
+	       l: 50,
+	       r: 20,
+	       b: 20,
+	       t: 50,
+	     },
+	     font: {
+	       size:18,
+	       color:"white",
+	     },
+	     //template:'plotly_dark',
+	   } }
+	   config={ {displaylogo: false} }
+  />;
+}
 
 function App() {
   useEffect(() => {
@@ -175,51 +214,66 @@ function App() {
     
     socket.on('connect', () => {
       AppStore.update(s => {s.connected = true; s.connect_status = "Connected"});
-      socket.emit('conf_state_sub');//Subscribe to configuration state
-      socket.emit('buf_state_sub');//Subscribe to buffer state change
       socket.emit('readings_state_sub');//Subscribe to readings state change
+      socket.emit('buf_state_sub');//Subscribe to buffer state change
+      socket.emit('conf_state_sub');//Subscribe to configuration state
     });
 
     socket.on('conf_state_update', (payload) => {
-      AppStore.update(s => {
+      console.log("Loading conf_state update");
+      AppStore.update(s => { 
 	Object.assign(s.conf_state, payload);
       });
     });
 
     socket.on('buf_state_update', (payload) => {
+      console.log("Loading buffer_state update");
       AppStore.update(s => {
-	Object.assign(s.buf_state, payload);
+	Object.assign(s.buf_state, payload); 
       });
     });
 
     socket.on('readings_state_add', (payload) => {
-	timings_state.push( ...payload[0]);
-	readings_state.push(...payload[1]);
-	
+      console.log("Loading readings add");
+      timings_state.push( ...payload[0]);
+      readings_state.push(...payload[1]);
+      
       AppStore.update(s => {
 	s.last_time    = timings_state[timings_state.length - 1];
 	s.last_reading = readings_state[readings_state.length - 1];
+	s.datarevision += 1;
       });
     });
 
     socket.on('readings_state_update', (payload) => {
-	timings_state = payload[0];
-	readings_state = payload[1];
+      console.log("Loading readings update");
+      timings_state = payload[0];
+      readings_state = payload[1];
       AppStore.update(s => {
 	s.last_time    = timings_state[timings_state.length - 1];
 	s.last_reading = readings_state[readings_state.length - 1];
+	s.datarevision = s.datarevision + 1;
       });
     });
     
     return () => socket.disconnect();
   }, []);
 
+  var {tabs_minimised} = AppStore.useState(s => ({
+    tabs_minimised: s.ui_state.tabs_minimised,
+  }));
+
   return (
     <KeyboardProvider>
       <TopMenu/>
       <main role="main" className="">
 	<LargeDisplay/>
-	<div id="tabs">
+	<div id="tabs" className={ tabs_minimised ? 'minimized' : '' } >
+	  <div id="tab-minimize" onClick={() => AppStore.update(s => { s.ui_state.tabs_minimised = !s.ui_state.tabs_minimised;})} >
+	    {
+	      tabs_minimised ? <i className="fas fa-window-maximize"/> : <i className="fas fa-window-minimize"/>
+	    }
+	  </div>
 	  <Tabs >
 	    <Tab eventKey="stats" title="Stats">
 	      <StatisticsPages/>
@@ -229,7 +283,8 @@ function App() {
 	    <Tab eventKey="config" title="Config">
 	      <Input onChange={ (text) => {} } />
 	    </Tab>
-	    <Tab eventKey="graph" title="Graph">
+	    <Tab eventKey="graph" title="Graph">	
+	      <DataGraph/>
 	    </Tab>
 	  </Tabs>
 	</div>
