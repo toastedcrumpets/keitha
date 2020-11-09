@@ -2,7 +2,7 @@
 from aiohttp import web
 import socketio
 
-debug=True
+debug=False
 
 #######################################################
 ############         SERVER                 ###########
@@ -54,6 +54,7 @@ async def conf_state_sub(sid):
 
 @sio.event    
 async def conf_state_update(sid, payload):
+    global conf_state
     if debug:
         print("conf update ", sid, payload)
     conf_state.update(payload)
@@ -70,6 +71,7 @@ async def buf_state_sub(sid):
 
 @sio.event    
 async def buf_state_update(sid, payload):
+    global buf_state
     if debug:
         print("buf update ", sid, payload)
     buf_state.update(payload)
@@ -86,6 +88,7 @@ async def readings_state_sub(sid):
 
 @sio.event    
 async def readings_state_add(sid, payload):
+    global readings_state, buf_state
     if debug:
         print("Readings add", sid, payload)
     #Add the readings
@@ -102,7 +105,9 @@ async def readings_state_add(sid, payload):
 @sio.event    
 async def readings_state_update(sid, payload):
     if debug:
+        global readings_state
         print("Readings update", sid, payload)
+    
     readings_state = payload
     await sio.emit('readings_state_update', readings_state, room='readings_state')
     #Update the readings status

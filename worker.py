@@ -87,13 +87,16 @@ async def main_loop(loop):
                 
     last = loop.time()
     while True:
-        await asyncio.sleep(0)
         if (loop.time() - last) > 1.0 / FPS: #Limit data uploads to the FPS
             last = loop.time()
             await send_readings()
         await make_reading()
+        #Here we sleep for 1 second if in hold mode (to lower CPU
+        #usage during hold), or zero seconds to process background
+        #tasks where needed.
+        sleeptime = 0.5 * (conf_state['triggerMode'] == 0)
+        await asyncio.sleep(sleeptime)
         
-            
 if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main_loop(loop))

@@ -14,6 +14,8 @@ import Plot from 'react-plotly.js';
 
 import './App.css';
 
+import numberformat from './numberformat.js';
+
 const AppStore = new Store({
   ui_state: {
     tabs_minimised: false,
@@ -82,20 +84,19 @@ function TopMenu() {
 }
 
 function LargeDisplay() {
-  const { reading, tabs_minimised } = AppStore.useState(s => ({
-    reading:s.last_reading, tabs_minimised:s.ui_state.tabs_minimised }));
-  
-  var start = "";
-  if (reading === undefined) {
-    start = "+-.------";
-  } else if (reading > 0) {
-    start = "+"+reading.toFixed(6);
-  } else { 
-    console.log(reading);
-    start = reading.toFixed(6);
-  }
-  return (<div id="MainDisplay" className={"text-monospace " + (tabs_minimised ? 'minimized': '')}>
-    { start + " mV" }
+    const { reading, tabs_minimised } = AppStore.useState(s => ({
+      reading:s.last_reading, tabs_minimised:s.ui_state.tabs_minimised }));
+    
+    var start = "", suffix="";
+    if (reading === undefined) {
+	start = "+ -.------";
+	suffix = "\xa0V";
+    } else { 
+	[start, suffix] = numberformat(reading, 6);
+	suffix += "V";
+    }
+    return (<div id="MainDisplay" className={"text-monospace " + (tabs_minimised ? 'minimized': '')}>
+	    { start }{suffix}
   </div>);
 
 }
@@ -220,21 +221,18 @@ function App() {
     });
 
     socket.on('conf_state_update', (payload) => {
-      console.log("Loading conf_state update");
       AppStore.update(s => { 
 	Object.assign(s.conf_state, payload);
       });
     });
 
     socket.on('buf_state_update', (payload) => {
-      console.log("Loading buffer_state update");
       AppStore.update(s => {
 	Object.assign(s.buf_state, payload); 
       });
     });
 
     socket.on('readings_state_add', (payload) => {
-      console.log("Loading readings add");
       timings_state.push( ...payload[0]);
       readings_state.push(...payload[1]);
       
@@ -246,7 +244,6 @@ function App() {
     });
 
     socket.on('readings_state_update', (payload) => {
-      console.log("Loading readings update");
       timings_state = payload[0];
       readings_state = payload[1];
       AppStore.update(s => {
@@ -284,8 +281,8 @@ function App() {
 	      <Input onChange={ (text) => {} } />
 	    </Tab>
 	    <Tab eventKey="graph" title="Graph">	
-	      <DataGraph/>
-	    </Tab>
+	  {/*<DataGraph/>*/}
+           </Tab>
 	  </Tabs>
 	</div>
       </main>

@@ -25,7 +25,7 @@ main {
     background-color:#555;
 }
 
-.topnav, .nav-link, .dropdown-menu, .dropdown-item  {
+.topnav, .nav-link, .dropdown-menu, .dropdown-item, #tabs {
     color:rgba(255,255,255,.8);
     background-color:#343a40;
 }
@@ -42,7 +42,6 @@ a:hover {
 }
 
 #tabs {
-    background-color:#878f99;
     position:absolute;
     bottom:0;
     left:0;
@@ -68,7 +67,7 @@ a:hover {
 #MainDisplay {
     color:LightGreen;
     font-size:5.5em;
-    padding-top:40px;
+    padding-top:52px;
     transition:font-size 1s ease 0s;
     text-align:right;
 }
@@ -76,10 +75,6 @@ a:hover {
 #MainDisplay.minimized {
     font-size:7.5em;    
 }   
-
-#tabs .tab-content, #tabs nav {
-    background-color:#878f99;
-}
 
 .js-plotly-plot .plotly .modebar-btn    {
     font-size:24px !important;
