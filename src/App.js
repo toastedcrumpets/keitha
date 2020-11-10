@@ -84,19 +84,19 @@ function TopMenu() {
 }
 
 function LargeDisplay() {
-    const { reading, tabs_minimised } = AppStore.useState(s => ({
-      reading:s.last_reading, tabs_minimised:s.ui_state.tabs_minimised }));
-    
-    var start = "", suffix="";
-    if (reading === undefined) {
-	start = "+ -.------";
-	suffix = "\xa0V";
-    } else { 
-	[start, suffix] = numberformat(reading, 6);
-	suffix += "V";
-    }
-    return (<div id="MainDisplay" className={"text-monospace " + (tabs_minimised ? 'minimized': '')}>
-	    { start }{suffix}
+  const { reading, tabs_minimised } = AppStore.useState(s => ({
+    reading:s.last_reading, tabs_minimised:s.ui_state.tabs_minimised }));
+  
+  var start = "", suffix="";
+  if (reading === undefined) {
+    start = "+ -.------";
+    suffix = "\xa0V";
+  } else { 
+    [start, suffix] = numberformat(reading, 6);
+    suffix += "V";
+  }
+  return (<div id="MainDisplay" className={"text-monospace " + (tabs_minimised ? 'minimized': '')}>
+    { start }{suffix}
   </div>);
 
 }
@@ -108,12 +108,12 @@ function StatisticsPages() {
   var avg = sum / N;
   var stddev = Math.sqrt(sum_sq / N - avg * avg);
 
-  avg = avg.toString();
-  stddev = stddev.toString();
+  avg = numberformat(avg, 6);
+  stddev = numberformat(stddev, 6);
 
-  var PtP = (max - min).toString();
-  min = min.toString();
-  max = max.toString();
+  var PtP = numberformat(max - min, 6, false);
+  min = numberformat(min, 6);
+  max = numberformat(max, 6);
 
   if (N === 0) {
     PtP = "-"
@@ -281,8 +281,8 @@ function App() {
 	      <Input onChange={ (text) => {} } />
 	    </Tab>
 	    <Tab eventKey="graph" title="Graph">	
-	  {/*<DataGraph/>*/}
-           </Tab>
+	      <DataGraph/>
+            </Tab>
 	  </Tabs>
 	</div>
       </main>

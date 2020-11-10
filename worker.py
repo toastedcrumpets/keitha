@@ -55,19 +55,36 @@ async def send_readings():
         await sio.emit('readings_state_add', payload)
         if debug:
             print("Uploading readings")
-    
-############# The main entry point 
+
+############## Periodic taking of readings
+import Adafruit_ADS1x15
+adc = Adafruit_ADS1x15.ADS1115()
 
 async def make_reading():
     global unsent_readings
     if conf_state['triggerMode'] > 0:
+        adc_modes=[
+            #gain, range (+-), LSB
+            [2/3, 6.144, 187.5e-6],
+            [1,   4.096, 125e-6],
+            [2,   2.048, 62.5e-6],
+            [4,   1.024, 31.25e-6],
+            [8,   0.512, 15.625e-6],
+            [16,  0.256, 7.8125e-6],
+        ]
+        mode=1
+        channel=0
+        reading = adc.read_adc(channel, gain=adc_modes[mode][0], data_rate=860) #860 is max speed
         unsent_readings[0].append(time.perf_counter())
-        unsent_readings[1].append(random.uniform(0, 1))
+        unsent_readings[1].append(reading * adc_modes[mode][2])
         if conf_state['triggerMode'] == 1:
             #We have to do this now to prevent extra readings while
             #waiting for the server to change the state
             conf_state['triggerMode'] = 0
             await sio.emit('conf_state_update', {'triggerMode':0})
+
+            
+############# The main entry point
 
 async def main_loop(loop):
     ### Connect to the server
@@ -91,10 +108,10 @@ async def main_loop(loop):
             last = loop.time()
             await send_readings()
         await make_reading()
-        #Here we sleep for 1 second if in hold mode (to lower CPU
+        #Here we sleep for 0.1 second if in hold mode (to lower CPU
         #usage during hold), or zero seconds to process background
         #tasks where needed.
-        sleeptime = 0.5 * (conf_state['triggerMode'] == 0)
+        sleeptime = 0.1 * (conf_state['triggerMode'] == 0)
         await asyncio.sleep(sleeptime)
         
 if __name__ == "__main__":

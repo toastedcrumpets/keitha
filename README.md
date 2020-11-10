@@ -52,7 +52,6 @@ npm install
 npm runs-script build
 ```
 
-
 ## Running the development server
 
 Start up the NPM development server in the keitha directory:
@@ -68,4 +67,12 @@ This will let you connect to the frontend on port 3000
 
 ## Wiring up the ADC
 
-## Running the 
+Follow this [excellent
+guide](https://learn.adafruit.com/raspberry-pi-analog-to-digital-converters/ads1015-slash-ads1115)
+to check that your ADS1115 is wired up properly and install the python
+library.  Once this works, you can start the
+server.
+
+
+## Running the backend
+
