@@ -33,6 +33,7 @@ const AppStore = new Store({
   last_reading:undefined,
   last_time:undefined,
   datarevision:0,
+  realtime:true,
 });
 
 ///// The actual measurements
@@ -159,47 +160,54 @@ function StatisticsPages() {
 let chart = null;
 
 function DataGraphTabPane() {
-  const datarevision = AppStore.useState(s => s.datarevision);
+  const [ datarevision, realtime ] = AppStore.useState(s => [s.datarevision, s.realtime]);
 
   const plotRef = useRef();
-
-  const trycreate = () => {
-    if ((chart === null) && (plotRef)) {
-      var el = document.createElement('div');
-      el.style.cssText = 'width:100%;height:50vh;';
-      plotRef.current.appendChild(el);
-      chart = new TimeChart(el, {
-	series: [{
-	  data:readings_state,
-	  lineWidth: 2,
-	  color:'lightgreen',
-	}],
-	zoom: {
-          x: {
-            autoRange: true,
-          },
-          y: {
-            autoRange: true,
-          }
-	}
-      });
-    }
-  };
-  
-  const dispose = () => {
-    if (chart !== null) {
-      chart.dispose();
-      plotRef.current.innerHTML = "";
-      chart = null;
-    }
-  };
   
   useEffect(() => {
+    const trycreate = () => {
+      if ((chart === null) && (plotRef)) {
+	var el = document.createElement('div');
+	el.style.cssText = 'width:100%;height:50vh;';
+	plotRef.current.appendChild(el);
+	chart = new TimeChart(el, {
+	  series: [{
+	    data:readings_state,
+	    lineWidth: 2,
+	    color:'lightgreen',
+	  }],
+	  zoom: {
+            x: {
+              autoRange: true,
+	      minDomainExtent: 1,
+            },
+            y: {
+              autoRange: true,
+	      minDomainExtent: 1,
+            }
+	  },
+	  realTime: realtime,
+	});
+
+	var style = document.createElement( 'style' );
+	style.innerHTML = '.tick { font-size: 1.4em; font-weight:bold;}';
+	el.shadowRoot.appendChild(style);
+      }
+    };
+    
+    const dispose = () => {
+      if (chart !== null) {
+	chart.dispose();
+	plotRef.current.innerHTML = "";
+	chart = null;
+      }
+    };
+
     dispose();
     trycreate();
     //Clean up the chart later!
     return dispose;
-  }, [datarevision]);  
+  }, [datarevision, ]);  
   
   return (
     <Tab.Pane eventKey="graph" onEntering={() => {chart.onResize();} }>
@@ -290,7 +298,7 @@ function App() {
 
 
 	<div id="tabs" className={ tabs_minimised ? 'minimized' : '' }>
-	  <Tab.Container defaultActiveKey="graph">
+	  <Tab.Container defaultActiveKey="graph" onSelect={() => AppStore.update(s => { s.ui_state.tabs_minimised = false;})}>
 	    <Row>
 	      <Nav variant="tabs">
 		<Nav.Item>
@@ -306,9 +314,9 @@ function App() {
 		  <Nav.Link eventKey="graph">Graph</Nav.Link>
 		</Nav.Item>
 	      </Nav>
-	      <div id="tab-minimize" onClick={() => AppStore.update(s => { s.ui_state.tabs_minimised = !s.ui_state.tabs_minimised;})} >
+	      <div id="tab-minimize"  >
 		{
-		  tabs_minimised ? <i className="fas fa-window-maximize"/> : <i className="fas fa-window-minimize"/>
+		  tabs_minimised ? <i className="fas fa-angle-up"/> : <i className="fas fa-angle-down"/>
 		}
 	      </div>
 	    </Row>

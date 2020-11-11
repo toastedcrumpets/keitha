@@ -31,7 +31,6 @@ export default function numberformat(num, precision, inc_sign=true) {
   var mant = num * 10 ** (-expo);
   var idx = expo/3+8;
   idx = Math.min(Math.max(0,idx), metricUnitStepsToPrefixSymbol.length);
-  console.log(base, expo, mant, idx);
   var SIprefix = metricUnitStepsToPrefixSymbol[idx];
 
   var signspace = '\xa0';

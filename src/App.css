@@ -25,7 +25,7 @@ main {
     background-color:#555;
 }
 
-.topnav, .nav-link, .dropdown-menu, .dropdown-item, #tabs {
+.topnav, .nav-link, .dropdown-menu, .dropdown-item {
     color:rgba(255,255,255,.8);
     background-color:#343a40;
 }
@@ -48,7 +48,28 @@ a:hover {
     right:0;
 }
 
+.row {
+    margin:0;
+}
+
+#tabs .nav-link {
+    background:none;
+    padding-left:0.5em
+}
+
+#tabs .nav-tabs .nav-link {
+    background-color:#242a30;
+    border: 1px solid transparent;
+    border-radius:15px 15px 0 0;    
+}
+
+#tabs .nav-link.active {
+    color:white;
+    background-color:#343a40;
+}
+
 #tabs .tab-content {
+    background-color:#343a40;
     height:50vh;
     transition: height 1s ease 0s;
     width:100vw;
@@ -56,6 +77,17 @@ a:hover {
 
 #tabs.minimized .tab-content {
     height:0;
+}
+
+#tab-minimize {
+    position:absolute;
+    top:0;
+    right:0;
+    padding-left:1rem;
+    padding-right:1rem;
+    font-size:1.5em;
+    background-color:#343a40;    
+    border-radius:15px 15px 0 0;    
 }
 
 .stats-table {
@@ -69,23 +101,12 @@ a:hover {
 
 #MainDisplay {
     color:LightGreen;
-    font-size:5.5em;
+    font-size:5.4em;
     padding-top:52px;
     transition:font-size 1s ease 0s;
     text-align:right;
 }
 
 #MainDisplay.minimized {
-    font-size:7.5em;    
-}   
-
-.js-plotly-plot .plotly .modebar-btn    {
-    font-size:24px !important;
-}
-
-#tab-minimize {
-    position:absolute;
-    top:0;
-    right:0;
-    padding:0.5em;
+    font-size:7.0em;    
 }
