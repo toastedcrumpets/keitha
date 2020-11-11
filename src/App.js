@@ -6,7 +6,7 @@ import socketIOClient from 'socket.io-client';
 
 import { KeyboardProvider, Input } from './Keyboard';
 
-import { Button, Container, Row, Col, Nav, NavItem, NavLink, Dropdown, Tab } from 'react-bootstrap';
+import { Button, ButtonGroup, ButtonToolbar, Container, Row, Col, Nav, NavItem, NavLink, Dropdown, Tab } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 import './App.css';
@@ -20,7 +20,8 @@ const AppStore = new Store({
     tabs_minimised: false,
   },
   conf_state: {
-    triggerMode:0,    
+    triggerMode:0,
+    triggerRate:-1,
   },
   buf_state: {
     sum:0,
@@ -67,8 +68,13 @@ function ConnectStatus() {
 }
 
 function TopMenu() {
-  const {triggerMode} = AppStore.useState(s => ({triggerMode:s.conf_state.triggerMode}));
+  const [ triggerMode, triggerRate ] = AppStore.useState(s => ([s.conf_state.triggerMode, s.conf_state.triggerRate]));
 
+  var rate_status = "- Hz";
+  if (triggerRate >= 0) {
+    rate_status = numberformat(1.0/triggerRate, 3, false)+"Hz"
+  }
+  
   return <Nav className="topnav">
     <Dropdown as={NavItem} className="mr-auto">
       <Dropdown.Toggle as={NavLink}>{TriggerButton(triggerMode)}</Dropdown.Toggle>
@@ -78,6 +84,11 @@ function TopMenu() {
 	<Dropdown.Item onClick={() => socket.emit('conf_state_update', {triggerMode:2}) }>{TriggerButton(2)}</Dropdown.Item>
       </Dropdown.Menu>
     </Dropdown>
+    <Nav.Item>
+      <Nav.Link eventKey="disabled" disabled>
+	{rate_status}
+      </Nav.Link>
+    </Nav.Item>
     <ConnectStatus/>
   </Nav>;
 }
@@ -86,16 +97,14 @@ function LargeDisplay() {
   const { reading, tabs_minimised } = AppStore.useState(s => ({
     reading:s.last_reading, tabs_minimised:s.ui_state.tabs_minimised }));
   
-  var start = "", suffix="";
-  if (reading === undefined) {
-    start = "+ -.------";
-    suffix = "  V";
-  } else { 
-    [start, suffix] = numberformat(reading, 6);
-    suffix += "V";
-  }
+  var output;;
+  if (reading === undefined)
+    output = "+ -.------  V";
+  else
+    output = numberformat(reading, 6)+'V';
+  
   return (<div id="MainDisplay" className={"text-monospace " + (tabs_minimised ? 'minimized': '')}>
-    { start } {suffix}
+    { output }
   </div>);
 
 }
@@ -107,12 +116,12 @@ function StatisticsPages() {
   var avg = sum / N;
   var stddev = Math.sqrt(sum_sq / N - avg * avg);
 
-  avg = numberformat(avg, 6);
-  stddev = numberformat(stddev, 6);
+  avg = numberformat(avg, 6)+'V';
+  stddev = numberformat(stddev, 6)+'V';
 
-  var PtP = numberformat(max - min, 6, false);
-  min = numberformat(min, 6);
-  max = numberformat(max, 6);
+  var PtP = numberformat(max - min, 6, false)+'V';
+  min = numberformat(min, 6)+'V';
+  max = numberformat(max, 6)+'V';
 
   if (N === 0) {
     PtP = "-"
@@ -149,7 +158,7 @@ function StatisticsPages() {
 	<Col>
 	</Col>
 	<Col>
-	  <Button variant="warning" onClick={() => socket.emit('readings_state_update', [[], []])}>Clear buffer</Button>
+	  <Button variant="danger" onClick={() => socket.emit('readings_state_update', [[], []])}><i className="far fa-trash-alt"></i> Clear buffer</Button>
 	</Col>	 
       </Row>
     </Container>
@@ -168,7 +177,7 @@ function DataGraphTabPane() {
     const trycreate = () => {
       if ((chart === null) && (plotRef)) {
 	var el = document.createElement('div');
-	el.style.cssText = 'width:100%;height:50vh;';
+	el.id = 'chart';
 	plotRef.current.appendChild(el);
 	chart = new TimeChart(el, {
 	  series: [{
@@ -208,10 +217,51 @@ function DataGraphTabPane() {
     //Clean up the chart later!
     return dispose;
   }, [datarevision, ]);  
+
+  const chartFollow = () => {
+    if (chart !== null)
+      chart.options.realTime = true;
+  };
+
+  const chartFullView = () => {
+    if (chart !== null) {
+      var i = 0, len = readings_state.length;
+      var minx = +Math.Infinity, maxx = -Math.Infinity;
+      var miny = +Math.Infinity, maxy = -Math.Infinity;
+      while (i < len) {
+	var reading = readings_state[i];
+        minx = Math.min(minx, reading.x);
+        maxx = Math.max(maxx, reading.x);
+        miny = Math.min(miny, reading.y);
+        maxy = Math.max(maxy, reading.y);
+        i++;
+      }
+      
+      chart.options.zoom.x.minDomain = minx;
+      chart.options.zoom.x.maxDomain = maxx;
+      chart.options.zoom.y.minDomain = miny;
+      chart.options.zoom.y.maxDomain = maxy;
+      chart.options.realTime = false;
+      chart.update();
+    }
+  };
   
   return (
     <Tab.Pane eventKey="graph" onEntering={() => {chart.onResize();} }>
-      <div id="graph-div" ref={plotRef}>
+      <div style={{display:'flex', flexFlow:'column', height:'50vh'}}>
+	<div className="charttoolbar" style={{textAlign:'center'}}>
+	  <ButtonToolbar style={{display:'inline-block'}}>
+	    <ButtonGroup >
+	      <Button onClick={chartFullView}><i className="fas fa-expand"></i></Button>
+	      <Button onClick={chartFollow}><i className="fas fa-fighter-jet"></i></Button>
+	    </ButtonGroup>
+	    <ButtonGroup style={{paddingLeft:'1em'}}>
+	      <Button variant="danger" onClick={() => socket.emit('readings_state_update', [[], []])}><i className="far fa-trash-alt"></i> Clear</Button>
+	    </ButtonGroup>
+	  </ButtonToolbar>
+	</div>
+	<div id="graph-div" ref={plotRef} style={{flex:1}}>
+	</div>
       </div>
     </Tab.Pane>
   );
@@ -295,8 +345,6 @@ function App() {
       <TopMenu/>
       <main role="main" className="">
 	<LargeDisplay/>
-
-
 	<div id="tabs" className={ tabs_minimised ? 'minimized' : '' }>
 	  <Tab.Container defaultActiveKey="graph" onSelect={() => AppStore.update(s => { s.ui_state.tabs_minimised = false;})}>
 	    <Row>
@@ -314,7 +362,7 @@ function App() {
 		  <Nav.Link eventKey="graph">Graph</Nav.Link>
 		</Nav.Item>
 	      </Nav>
-	      <div id="tab-minimize"  >
+	      <div id="tab-minimize"  onClick={() => AppStore.update(s => { s.ui_state.tabs_minimised = !tabs_minimised;})}>
 		{
 		  tabs_minimised ? <i className="fas fa-angle-up"/> : <i className="fas fa-angle-down"/>
 		}

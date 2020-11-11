@@ -25,22 +25,22 @@ export default function numberformat(num, precision, inc_sign=true) {
   if (!inc_sign)
     sign = "\xa0";
 
-  num = Math.abs(num);
-  const base = Math.log10(num);
+  const absnum = Math.abs(num);
+  const base = Math.log10(absnum);
   const expo = 3 * Math.round(base / 3);
-  var mant = num * 10 ** (-expo);
+  var mant = absnum * 10 ** (-expo);
   var idx = expo/3+8;
   idx = Math.min(Math.max(0,idx), metricUnitStepsToPrefixSymbol.length);
   var SIprefix = metricUnitStepsToPrefixSymbol[idx];
 
   var signspace = '\xa0';
-	if (num === 0) {
-  	mant = 0;
-	  SIprefix = '\xa0';    
+  if (num === 0) {
+    mant = 0;
+    SIprefix = '\xa0';    
   } else {
-  	if ((base - expo) >= 1)
-    	signspace = '';
-	}
+    if ((base - expo) >= 1)
+      signspace = '';
+  }
   
-  return [sign + signspace + mant.toFixed(precision), SIprefix];
+  return sign + signspace + mant.toFixed(precision)+' '+ SIprefix;
 }

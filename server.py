@@ -18,6 +18,7 @@ sio.attach(app)
 #state, buffer state, and readings
 conf_state = {
     'triggerMode':0,
+    'triggerRate':-1,
 }
 
 buf_state = {
