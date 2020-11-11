@@ -6,7 +6,7 @@ import socketIOClient from 'socket.io-client';
 
 import { KeyboardProvider, Input } from './Keyboard';
 
-import { Button, Container, Row, Col, Nav, NavItem, NavLink, Dropdown, Tabs, Tab } from 'react-bootstrap';
+import { Button, Container, Row, Col, Nav, NavItem, NavLink, Dropdown, Tab } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 import './App.css';
@@ -32,13 +32,12 @@ const AppStore = new Store({
   connect_status:"Connecting...",
   last_reading:undefined,
   last_time:undefined,
-  datarevision:0, 
+  datarevision:0,
 });
 
 ///// The actual measurements
 //We don't store large data inside the state/pullstate/immer for performance reasons
 var readings_state = [];
-var timings_state = [];
 
 function TriggerButton(trigMode) {
   //Render the trigger button depending on the mode
@@ -157,61 +156,58 @@ function StatisticsPages() {
   ;
 }
 
-function DataGraph() {
-    const plotRef = useRef();
-    let now = Math.floor(new Date() / 1e3);
+let chart = null;
 
-    const data = [[now, now + 60, now + 120, now + 180], [1, 2, 3, 4]];
+function DataGraphTabPane() {
+  const datarevision = AppStore.useState(s => s.datarevision);
 
-    useEffect(() => {
-	if (plotRef) {
-	    new TimeChart(plotRef.current, {
-		series: [{
-		    data,
-		    lineWidth: 10,
-		}],
-	    });
+  const plotRef = useRef();
+
+  const trycreate = () => {
+    if ((chart === null) && (plotRef)) {
+      var el = document.createElement('div');
+      el.style.cssText = 'width:100%;height:50vh;';
+      plotRef.current.appendChild(el);
+      chart = new TimeChart(el, {
+	series: [{
+	  data:readings_state,
+	  lineWidth: 2,
+	  color:'lightgreen',
+	}],
+	zoom: {
+          x: {
+            autoRange: true,
+          },
+          y: {
+            autoRange: true,
+          }
 	}
-    }, []);
-    
-    return (
-	    <div>
-	    <div ref={plotRef} />
-	    </div>
-    );
+      });
+    }
+  };
+  
+  const dispose = () => {
+    if (chart !== null) {
+      chart.dispose();
+      plotRef.current.innerHTML = "";
+      chart = null;
+    }
+  };
+  
+  useEffect(() => {
+    dispose();
+    trycreate();
+    //Clean up the chart later!
+    return dispose;
+  }, [datarevision]);  
+  
+  return (
+    <Tab.Pane eventKey="graph" onEntering={() => {chart.onResize();} }>
+      <div id="graph-div" ref={plotRef}>
+      </div>
+    </Tab.Pane>
+  );
 }
-    
-//  return <Plot
-//	   data={[
-//	     {
-//	       x: timings_state,
-//	       y: readings_state,
-//	       type: 'scattergl',
-//	       mode: 'lines+markers',
-//	       marker: {color: 'lightgreen'},
-//	     },
-//	   ]}
-//	   layout={ {
-//	     width: 1024,
-//	     height: 250,
-//	     datarevision:datarevision,
-//	     paper_bgcolor:'rgba(0,0,0,0)',
-//	     plot_bgcolor:'rgba(0,0,0,0)',
-//	     margin: {
-//	       l: 50,
-//	       r: 20,
-//	       b: 20,
-//	       t: 50,
-//	     },
-//	     font: {
-//	       size:18,
-//	       color:"white",
-//	     },
-//	     //template:'plotly_dark',
-//	   } }
-//	   config={ {displaylogo: false} }
-//  />;
-//}
 
 var socket = null;
 
@@ -253,23 +249,29 @@ function App() {
     });
 
     socket.on('readings_state_add', (payload) => {
-      timings_state.push( ...payload[0]);
-      readings_state.push(...payload[1]);
-      
+      payload[0].forEach((t, idx) => {
+	readings_state.push({x:t, y:payload[1][idx]});
+      });
+      if (chart !== null) {
+	chart.update();
+      }
       AppStore.update(s => {
-	s.last_time    = timings_state[timings_state.length - 1];
-	s.last_reading = readings_state[readings_state.length - 1];
-	s.datarevision += 1;
+	s.last_time    = payload[0][payload[0].length - 1];
+	s.last_reading = payload[1][payload[1].length - 1];
       });
     });
 
     socket.on('readings_state_update', (payload) => {
-      timings_state = payload[0];
-      readings_state = payload[1];
+      //Clear the readings by replacing the array (got to leave the old array in place till we've refreshed the graph)
+      readings_state = []; 
+      payload[0].forEach((t, idx) => {
+	readings_state.push({x:t, y:payload[1][idx]});
+      });
+      
       AppStore.update(s => {
-	s.last_time    = timings_state[timings_state.length - 1];
-	s.last_reading = readings_state[readings_state.length - 1];
-	s.datarevision = s.datarevision + 1;
+	s.last_time    = payload[0][payload[0].length - 1];
+	s.last_reading = payload[1][payload[1].length - 1];
+	s.datarevision += 1;
       });
     });
     
@@ -285,25 +287,45 @@ function App() {
       <TopMenu/>
       <main role="main" className="">
 	<LargeDisplay/>
-	<div id="tabs" className={ tabs_minimised ? 'minimized' : '' } >
-	  <div id="tab-minimize" onClick={() => AppStore.update(s => { s.ui_state.tabs_minimised = !s.ui_state.tabs_minimised;})} >
-	    {
-	      tabs_minimised ? <i className="fas fa-window-maximize"/> : <i className="fas fa-window-minimize"/>
-	    }
-	  </div>
-	  <Tabs >
-	    <Tab eventKey="stats" title="Stats">
-	      <StatisticsPages/>
-	    </Tab>
-	    <Tab eventKey="mode" title="Mode">
-	    </Tab>
-	    <Tab eventKey="config" title="Config">
-	      <Input onChange={ (text) => {} } />
-	    </Tab>
-	    <Tab eventKey="graph" title="Graph">	
-	      <DataGraph />
-            </Tab>
-	  </Tabs>
+
+
+	<div id="tabs" className={ tabs_minimised ? 'minimized' : '' }>
+	  <Tab.Container defaultActiveKey="graph">
+	    <Row>
+	      <Nav variant="tabs">
+		<Nav.Item>
+		  <Nav.Link eventKey="stats">Stats</Nav.Link>
+		</Nav.Item>
+		<Nav.Item>
+		  <Nav.Link eventKey="mode">Mode</Nav.Link>
+		</Nav.Item>
+		<Nav.Item>
+		  <Nav.Link eventKey="config">Config</Nav.Link>
+		</Nav.Item>
+		<Nav.Item>
+		  <Nav.Link eventKey="graph">Graph</Nav.Link>
+		</Nav.Item>
+	      </Nav>
+	      <div id="tab-minimize" onClick={() => AppStore.update(s => { s.ui_state.tabs_minimised = !s.ui_state.tabs_minimised;})} >
+		{
+		  tabs_minimised ? <i className="fas fa-window-maximize"/> : <i className="fas fa-window-minimize"/>
+		}
+	      </div>
+	    </Row>
+	    <Row>
+	      <Tab.Content>
+		<Tab.Pane eventKey="stats">
+		  <StatisticsPages/>
+		</Tab.Pane>
+		<Tab.Pane eventKey="mode">
+		</Tab.Pane>
+		<Tab.Pane eventKey="config">
+		  <Input onChange={ (text) => {} } />
+		</Tab.Pane>
+		<DataGraphTabPane />
+	      </Tab.Content>
+	    </Row>
+	  </Tab.Container>
 	</div>
       </main>
     </KeyboardProvider>

@@ -24,17 +24,24 @@ export default function numberformat(num, precision, inc_sign=true) {
   var sign = (num < 0) ? '-' : '+';
   if (!inc_sign)
     sign = "\xa0";
-  
-  const base = Math.log10(Math.abs(num));
+
+  num = Math.abs(num);
+  const base = Math.log10(num);
   const expo = 3 * Math.round(base / 3);
-  const mant = num * 10 ** (-expo);
-  const SIprefix = metricUnitStepsToPrefixSymbol[expo/3+8];
+  var mant = num * 10 ** (-expo);
+  var idx = expo/3+8;
+  idx = Math.min(Math.max(0,idx), metricUnitStepsToPrefixSymbol.length);
+  console.log(base, expo, mant, idx);
+  var SIprefix = metricUnitStepsToPrefixSymbol[idx];
 
   var signspace = '\xa0';
-  if ((base - expo) >= 1)
-    signspace = '';
+	if (num === 0) {
+  	mant = 0;
+	  SIprefix = '\xa0';    
+  } else {
+  	if ((base - expo) >= 1)
+    	signspace = '';
+	}
   
-  if (SIprefix === undefined)
-    return sign+Math.abs(num).toExponential(precision);
   return [sign + signspace + mant.toFixed(precision), SIprefix];
 }

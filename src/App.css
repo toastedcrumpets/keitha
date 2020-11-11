@@ -51,6 +51,7 @@ a:hover {
 #tabs .tab-content {
     height:50vh;
     transition: height 1s ease 0s;
+    width:100vw;
 }
 
 #tabs.minimized .tab-content {
