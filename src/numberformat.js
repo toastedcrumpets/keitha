@@ -30,8 +30,8 @@ export default function numberformat(num, precision, inc_sign=true) {
   const mant = num * 10 ** (-expo);
   const SIprefix = metricUnitStepsToPrefixSymbol[expo/3+8];
 
-  var signspace = ' ';
-  if ((base - expo) > 1)
+  var signspace = '\xa0';
+  if ((base - expo) >= 1)
     signspace = '';
   
   if (SIprefix === undefined)

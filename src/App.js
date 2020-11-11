@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 import { Store } from 'pullstate';
 
@@ -9,12 +9,11 @@ import { KeyboardProvider, Input } from './Keyboard';
 import { Button, Container, Row, Col, Nav, NavItem, NavLink, Dropdown, Tabs, Tab } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
-//Need to load plotly this way, as loading it "normally" causes a heap over-size error.
-import Plot from 'react-plotly.js';
-
 import './App.css';
 
 import numberformat from './numberformat.js';
+
+import TimeChart from "timechart";
 
 const AppStore = new Store({
   ui_state: {
@@ -90,13 +89,13 @@ function LargeDisplay() {
   var start = "", suffix="";
   if (reading === undefined) {
     start = "+ -.------";
-    suffix = "\xa0V";
+    suffix = "  V";
   } else { 
     [start, suffix] = numberformat(reading, 6);
     suffix += "V";
   }
   return (<div id="MainDisplay" className={"text-monospace " + (tabs_minimised ? 'minimized': '')}>
-    { start }{suffix}
+    { start } {suffix}
   </div>);
 
 }
@@ -158,42 +157,63 @@ function StatisticsPages() {
   ;
 }
 
-var socket = null
-
 function DataGraph() {
-  var datarevision = AppStore.useState(s => s.datarevision);
-  
-  return <Plot
-	   data={[
-	     {
-	       x: timings_state,
-	       y: readings_state,
-	       type: 'scattergl',
-	       mode: 'lines+markers',
-	       marker: {color: 'lightgreen'},
-	     },
-	   ]}
-	   layout={ {
-	     width: 1024,
-	     height: 250,
-	     datarevision:datarevision,
-	     paper_bgcolor:'rgba(0,0,0,0)',
-	     plot_bgcolor:'rgba(0,0,0,0)',
-	     margin: {
-	       l: 50,
-	       r: 20,
-	       b: 20,
-	       t: 50,
-	     },
-	     font: {
-	       size:18,
-	       color:"white",
-	     },
-	     //template:'plotly_dark',
-	   } }
-	   config={ {displaylogo: false} }
-  />;
+    const plotRef = useRef();
+    let now = Math.floor(new Date() / 1e3);
+
+    const data = [[now, now + 60, now + 120, now + 180], [1, 2, 3, 4]];
+
+    useEffect(() => {
+	if (plotRef) {
+	    new TimeChart(plotRef.current, {
+		series: [{
+		    data,
+		    lineWidth: 10,
+		}],
+	    });
+	}
+    }, []);
+    
+    return (
+	    <div>
+	    <div ref={plotRef} />
+	    </div>
+    );
 }
+    
+//  return <Plot
+//	   data={[
+//	     {
+//	       x: timings_state,
+//	       y: readings_state,
+//	       type: 'scattergl',
+//	       mode: 'lines+markers',
+//	       marker: {color: 'lightgreen'},
+//	     },
+//	   ]}
+//	   layout={ {
+//	     width: 1024,
+//	     height: 250,
+//	     datarevision:datarevision,
+//	     paper_bgcolor:'rgba(0,0,0,0)',
+//	     plot_bgcolor:'rgba(0,0,0,0)',
+//	     margin: {
+//	       l: 50,
+//	       r: 20,
+//	       b: 20,
+//	       t: 50,
+//	     },
+//	     font: {
+//	       size:18,
+//	       color:"white",
+//	     },
+//	     //template:'plotly_dark',
+//	   } }
+//	   config={ {displaylogo: false} }
+//  />;
+//}
+
+var socket = null;
 
 function App() {
   useEffect(() => {
@@ -281,7 +301,7 @@ function App() {
 	      <Input onChange={ (text) => {} } />
 	    </Tab>
 	    <Tab eventKey="graph" title="Graph">	
-	      <DataGraph/>
+	      <DataGraph />
             </Tab>
 	  </Tabs>
 	</div>

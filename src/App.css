@@ -46,13 +46,15 @@ a:hover {
     bottom:0;
     left:0;
     right:0;
-    height:60vh;
-    transition: height 1s ease 0s;
-
 }
 
-#tabs.minimized {
-    height:53px;
+#tabs .tab-content {
+    height:50vh;
+    transition: height 1s ease 0s;
+}
+
+#tabs.minimized .tab-content {
+    height:0;
 }
 
 .stats-table {
