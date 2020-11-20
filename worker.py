@@ -9,9 +9,14 @@ import random
 # This is used to output status/payloads to the console
 debug=False
 
-# This is the worker's copy of the conf_state from the server.
+# This is the worker's copy of the conf_state from the server. Here we
+# just put what we absolutely need to run, everything else will be
+# filled in by the server on connection.
 conf_state = {
-    'triggerMode':0,
+    'triggerMode':0, #Are we triggered continuously (2), single (1), or hold (0)
+    'major_mode':0, #For this worker, this is the ADC channel, but might be DCV, ACV, etc in a DMM
+    'major_modes':['DCV1', 'DCV2', 'DCV3', 'DCV4'],
+    'options':[], #What options are available for this mode.
 }
 
 # How often to upload readings to the server (tick). We rate limit
@@ -29,6 +34,7 @@ unsent_readings = [
 Hz_measure_last_reading_time = None  #When the last reading was taken
 Hz_measure_interval_sum = 0  #The sum of all intervals measured since the last report
 Hz_measure_samples = 0 #How many intervals have been sampled
+Hz_measure_last_report = -1 #Used to track what was last sent (to prevent spurious updates)
 
 ############# Communication setup and maintainance
 
@@ -39,6 +45,10 @@ sio = socketio.AsyncClient(reconnection=True, reconnection_attempts=0)
 async def connect():
     #Here we register with the server for configuration updates
     await sio.emit('conf_state_sub')
+    await sio.emit('conf_state_update', {
+        'major_mode':conf_state['major_mode'],
+        'major_modes':conf_state['major_modes'],
+    })
     if debug:
         print('Worker thread connected')
 
@@ -58,6 +68,14 @@ async def conf_state_update(payload):
     global Hz_measure_last_reading_time
     if debug:
         print("Conf update ", payload)
+
+    if 'major_mode' in payload and (payload['major_mode'] != conf_state['major_mode']):
+        #The major mode has changed, send the relevant options
+        newopts = []
+        await sio.emit('conf_state_update', {'options':newopts})
+        payload['options'] = newopts
+
+    #Actually merge the updates
     conf_state.update(payload)
 
     #If we're not in continuous trigger mode, we can't really measure
@@ -67,7 +85,7 @@ async def conf_state_update(payload):
 
 ############# Periodic upload of readings
 async def send_readings():
-    global unsent_readings, Hz_measure_interval_sum, Hz_measure_samples
+    global unsent_readings, Hz_measure_interval_sum, Hz_measure_samples, Hz_measure_last_report
     to_send = len(unsent_readings[0])
     if to_send > 0:
         payload = unsent_readings
@@ -78,11 +96,17 @@ async def send_readings():
 
     if conf_state['triggerMode'] == 2:
         if Hz_measure_samples > 0:
-            await sio.emit('conf_state_update', {'triggerRate':  Hz_measure_interval_sum / Hz_measure_samples})
+            report = Hz_measure_interval_sum / Hz_measure_samples
             Hz_measure_interval_sum = 0
             Hz_measure_samples = 0
+            if report != Hz_measure_last_report:
+                Hz_measure_last_report = report
+                await sio.emit('conf_state_update', {'triggerRate':  report})
     else:
-        await sio.emit('conf_state_update', {'triggerRate': -1})
+        report = -1
+        if report != Hz_measure_last_report:
+            Hz_measure_last_report = report
+            await sio.emit('conf_state_update', {'triggerRate':  report})
             
 ############## The actual reading code
 import Adafruit_ADS1x15
@@ -101,7 +125,7 @@ async def make_reading():
             [16,  0.256, 7.8125e-6],
         ]
         mode=1
-        channel=0
+        channel=conf_state['major_mode']
         reading = adc.read_adc(channel, gain=adc_modes[mode][0], data_rate=860) #860 is max speed
         reading_time = time.perf_counter()
         unsent_readings[0].append(reading_time)

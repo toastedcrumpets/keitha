@@ -22,6 +22,9 @@ const AppStore = new Store({
   conf_state: {
     triggerMode:0,
     triggerRate:-1,
+    major_mode:0,
+    major_modes:['DCV1', 'DCV2', 'DCV3', 'DCV4'],
+    options:[],
   },
   buf_state: {
     sum:0,
@@ -176,10 +179,7 @@ function DataGraphTabPane() {
   useEffect(() => {
     const trycreate = () => {
       if ((chart === null) && (plotRef)) {
-	var el = document.createElement('div');
-	el.id = 'chart';
-	plotRef.current.appendChild(el);
-	chart = new TimeChart(el, {
+	chart = new TimeChart(plotRef.current, {
 	  series: [{
 	    data:readings_state,
 	    lineWidth: 2,
@@ -187,11 +187,11 @@ function DataGraphTabPane() {
 	  }],
 	  zoom: {
             x: {
-              autoRange: true,
+              autoRange: false,
 	      minDomainExtent: 1,
             },
             y: {
-              autoRange: true,
+              autoRange: false,
 	      minDomainExtent: 1,
             }
 	  },
@@ -200,14 +200,13 @@ function DataGraphTabPane() {
 
 	var style = document.createElement( 'style' );
 	style.innerHTML = '.tick { font-size: 1.4em; font-weight:bold;}';
-	el.shadowRoot.appendChild(style);
+	plotRef.current.shadowRoot.appendChild(style);
       }
     };
     
     const dispose = () => {
       if (chart !== null) {
 	chart.dispose();
-	plotRef.current.innerHTML = "";
 	chart = null;
       }
     };
@@ -225,22 +224,24 @@ function DataGraphTabPane() {
 
   const chartFullView = () => {
     if (chart !== null) {
-      var i = 0, len = readings_state.length;
-      var minx = +Math.Infinity, maxx = -Math.Infinity;
-      var miny = +Math.Infinity, maxy = -Math.Infinity;
-      while (i < len) {
-	var reading = readings_state[i];
-        minx = Math.min(minx, reading.x);
-        maxx = Math.max(maxx, reading.x);
-        miny = Math.min(miny, reading.y);
-        maxy = Math.max(maxy, reading.y);
-        i++;
-      }
-      
-      chart.options.zoom.x.minDomain = minx;
-      chart.options.zoom.x.maxDomain = maxx;
-      chart.options.zoom.y.minDomain = miny;
-      chart.options.zoom.y.maxDomain = maxy;
+      //var i = 0, len = readings_state.length;
+      //var minx = +Math.Infinity, maxx = -Math.Infinity;
+      //var miny = +Math.Infinity, maxy = -Math.Infinity;
+      //while (i < len) {
+      //	var reading = readings_state[i];
+      //  minx = Math.min(minx, reading.x);
+      //  maxx = Math.max(maxx, reading.x);
+      //  miny = Math.min(miny, reading.y);
+      //  maxy = Math.max(maxy, reading.y);
+      //  i++;
+      //}
+      //
+      //chart.options.zoom.x.minDomain = minx;
+      //chart.options.zoom.x.maxDomain = maxx;
+      //chart.options.zoom.y.minDomain = miny;
+      //chart.options.zoom.y.maxDomain = maxy;
+      chart.options.xRange = 'auto';
+      chart.options.yRange = 'auto';
       chart.options.realTime = false;
       chart.update();
     }
@@ -260,8 +261,7 @@ function DataGraphTabPane() {
 	    </ButtonGroup>
 	  </ButtonToolbar>
 	</div>
-	<div id="graph-div" ref={plotRef} style={{flex:1}}>
-	</div>
+	<div id="chart" ref={plotRef}></div>
       </div>
     </Tab.Pane>
   );
@@ -336,10 +336,13 @@ function App() {
     return () => socket.disconnect();
   }, []);
 
-  var {tabs_minimised} = AppStore.useState(s => ({
-    tabs_minimised: s.ui_state.tabs_minimised,
-  }));
-
+  var [tabs_minimised, major_mode, major_modes, options ] = AppStore.useState(s => ([
+    s.ui_state.tabs_minimised,
+    s.conf_state.major_mode,
+    s.conf_state.major_modes,
+    s.conf_state.options,
+  ]));
+  
   return (
     <KeyboardProvider>
       <TopMenu/>
@@ -374,6 +377,12 @@ function App() {
 		  <StatisticsPages/>
 		</Tab.Pane>
 		<Tab.Pane eventKey="mode">
+		  {
+		  major_modes.map((name, idx) =>
+		  <Button className="modebutton" size="lg" variant="primary" active={major_mode == idx} onClick={() => socket.emit('conf_state_update', {major_mode:idx}) }>
+		    {name}
+		  </Button>)
+		  }
 		</Tab.Pane>
 		<Tab.Pane eventKey="config">
 		  <Input onChange={ (text) => {} } />

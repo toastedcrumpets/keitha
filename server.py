@@ -19,6 +19,9 @@ sio.attach(app)
 conf_state = {
     'triggerMode':0,
     'triggerRate':-1,
+    'major_mode':0, 
+    'major_modes':['N/A'],
+    'options':[]
 }
 
 buf_state = {
