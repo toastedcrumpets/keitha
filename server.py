@@ -8,6 +8,15 @@ debug=False
 ############         SERVER                 ###########
 #######################################################
 
+from collections.abc import Mapping
+def deep_update(d1, d2):
+    #This function merges updates to dictionaries
+    if all((isinstance(d, Mapping) for d in (d1, d2))):
+        for k, v in d2.items():
+            d1[k] = deep_update(d1.get(k), v)
+        return d1
+    return d2
+
 #Remove the cors_allowed_origins below when in production
 sio = socketio.AsyncServer(cors_allowed_origins='*', always_connect=True)
 app = web.Application()
@@ -21,7 +30,7 @@ conf_state = {
     'triggerRate':-1,
     'major_mode':0, 
     'major_modes':['N/A'],
-    'options':[]
+    'options':{},
 }
 
 buf_state = {
@@ -61,7 +70,7 @@ async def conf_state_update(sid, payload):
     global conf_state
     if debug:
         print("conf update ", sid, payload)
-    conf_state.update(payload)
+    conf_state = deep_update(conf_state, payload)
     await sio.emit('conf_state_update', payload, room='conf_state')
 
 ########### Buffer state
@@ -78,7 +87,7 @@ async def buf_state_update(sid, payload):
     global buf_state
     if debug:
         print("buf update ", sid, payload)
-    buf_state.update(payload)
+    buf_state = deep_update(buf_state, payload)
     await sio.emit('buf_state_update', payload, room='buf_state')
 
 ########### Readings state

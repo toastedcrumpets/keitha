@@ -5,6 +5,35 @@ import time
 import random
 
 ############# Global variables/state
+from collections.abc import Mapping
+def deep_update(d1, d2):
+    #This function merges updates to dictionaries
+    if all((isinstance(d, Mapping) for d in (d1, d2))):
+        for k, v in d2.items():
+            d1[k] = deep_update(d1.get(k), v)
+        return d1
+    return d2
+
+#Details on the ADC modes
+adc_modes_info=[
+    #gain, range (+-), LSB
+    [2/3, 6.144, 187.5e-6],
+    [1,   4.096, 125e-6],
+    [2,   2.048, 62.5e-6],
+    [4,   1.024, 31.25e-6],
+    [8,   0.512, 15.625e-6],
+    [16,  0.256, 7.8125e-6],
+]
+
+def updateOptions():
+    #If the major mode has changed, we might want to update the available options
+    conf_state['options'] = {
+        'gain': {
+            'type':'dropdown',
+            'values':[str(Vmax)+' V' for gain, Vmax, lsb in adc_modes_info],
+            'value':1
+        }
+    }
 
 # This is used to output status/payloads to the console
 debug=False
@@ -16,8 +45,11 @@ conf_state = {
     'triggerMode':0, #Are we triggered continuously (2), single (1), or hold (0)
     'major_mode':0, #For this worker, this is the ADC channel, but might be DCV, ACV, etc in a DMM
     'major_modes':['DCV1', 'DCV2', 'DCV3', 'DCV4'],
-    'options':[], #What options are available for this mode.
+    'options':{ #What options are available for this mode.
+    }, 
 }
+
+updateOptions()#This loads the initial options
 
 # How often to upload readings to the server (tick). We rate limit
 # this as the overhead of uploading 1000's of readings per second
@@ -48,6 +80,7 @@ async def connect():
     await sio.emit('conf_state_update', {
         'major_mode':conf_state['major_mode'],
         'major_modes':conf_state['major_modes'],
+        'options':conf_state['options'],
     })
     if debug:
         print('Worker thread connected')
@@ -61,22 +94,20 @@ async def connect_error(message):
 def disconnect():
     if debug:
         print('Worker thread disconnected')
-
+        
 # Handle conf_state updates coming in from the server
 @sio.event
 async def conf_state_update(payload):
-    global Hz_measure_last_reading_time
+    global Hz_measure_last_reading_time, conf_state
     if debug:
         print("Conf update ", payload)
 
     if 'major_mode' in payload and (payload['major_mode'] != conf_state['major_mode']):
-        #The major mode has changed, send the relevant options
-        newopts = []
-        await sio.emit('conf_state_update', {'options':newopts})
-        payload['options'] = newopts
+        updateOptions()
+        await sio.emit('conf_state_update', {'options':conf_state['options']})
 
     #Actually merge the updates
-    conf_state.update(payload)
+    conf_state = deep_update(conf_state, payload)
 
     #If we're not in continuous trigger mode, we can't really measure
     #the trigger rate. Reset the measurement.
@@ -114,22 +145,16 @@ adc = Adafruit_ADS1x15.ADS1115()
 
 async def make_reading():
     global unsent_readings, Hz_measure_last_reading_time, Hz_measure_interval_sum, Hz_measure_samples
-    if conf_state['triggerMode'] > 0:
-        adc_modes=[
-            #gain, range (+-), LSB
-            [2/3, 6.144, 187.5e-6],
-            [1,   4.096, 125e-6],
-            [2,   2.048, 62.5e-6],
-            [4,   1.024, 31.25e-6],
-            [8,   0.512, 15.625e-6],
-            [16,  0.256, 7.8125e-6],
-        ]
-        mode=1
+    if conf_state['triggerMode'] > 0:        
+        gain_mode=0
+        if 'gain' in conf_state['options']: #We have to check the option has been set
+            gain_mode = conf_state['options']['gain']['value']
+        
         channel=conf_state['major_mode']
-        reading = adc.read_adc(channel, gain=adc_modes[mode][0], data_rate=860) #860 is max speed
+        reading = adc.read_adc(channel, gain=adc_modes_info[gain_mode][0], data_rate=860) #860 is max speed
         reading_time = time.perf_counter()
         unsent_readings[0].append(reading_time)
-        unsent_readings[1].append(reading * adc_modes[mode][2])
+        unsent_readings[1].append(reading * adc_modes_info[gain_mode][2])
 
         #Update the measurements of the intervals for reading, but
         #only if in continuous sampling mode.

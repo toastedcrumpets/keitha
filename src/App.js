@@ -6,7 +6,7 @@ import socketIOClient from 'socket.io-client';
 
 import { KeyboardProvider, Input } from './Keyboard';
 
-import { Button, ButtonGroup, ButtonToolbar, Container, Row, Col, Nav, NavItem, NavLink, Dropdown, Tab } from 'react-bootstrap';
+import { Button, ButtonGroup, ButtonToolbar, Container, Row, Col, Nav, NavItem, NavLink, Dropdown, DropdownButton, Tab } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 import './App.css';
@@ -24,7 +24,7 @@ const AppStore = new Store({
     triggerRate:-1,
     major_mode:0,
     major_modes:['DCV1', 'DCV2', 'DCV3', 'DCV4'],
-    options:[],
+    options:{},
   },
   buf_state: {
     sum:0,
@@ -267,6 +267,36 @@ function DataGraphTabPane() {
   );
 }
 
+/**
+ * Performs a deep merge of objects and returns new object. Does not modify
+ * objects (immutable) and merges arrays via concatenation.
+ *
+ * @param {...object} objects - Objects to merge
+ * @returns {object} New object with merged key/values
+ */
+function mergeDeep(...objects) {
+  const isObject = obj => obj && typeof obj === 'object';
+  
+  return objects.reduce((prev, obj) => {
+    Object.keys(obj).forEach(key => {
+      const pVal = prev[key];
+      const oVal = obj[key];
+      
+      if (Array.isArray(pVal) && Array.isArray(oVal)) {
+        prev[key] = pVal.concat(...oVal);
+      }
+      else if (isObject(pVal) && isObject(oVal)) {
+        prev[key] = mergeDeep(pVal, oVal);
+      }
+      else {
+        prev[key] = oVal;
+      }
+    });
+    
+    return prev;
+  }, {});
+}
+
 var socket = null;
 
 function App() {
@@ -296,13 +326,13 @@ function App() {
 
     socket.on('conf_state_update', (payload) => {
       AppStore.update(s => { 
-	Object.assign(s.conf_state, payload);
+	s.conf_state = mergeDeep(s.conf_state, payload);
       });
     });
 
     socket.on('buf_state_update', (payload) => {
       AppStore.update(s => {
-	Object.assign(s.buf_state, payload); 
+	s.buf_state = mergeDeep(s.buf_state, payload); 
       });
     });
 
@@ -343,6 +373,7 @@ function App() {
     s.conf_state.options,
   ]));
   
+  console.log(options);
   return (
     <KeyboardProvider>
       <TopMenu/>
@@ -378,14 +409,29 @@ function App() {
 		</Tab.Pane>
 		<Tab.Pane eventKey="mode">
 		  {
-		  major_modes.map((name, idx) =>
-		  <Button className="modebutton" size="lg" variant="primary" active={major_mode == idx} onClick={() => socket.emit('conf_state_update', {major_mode:idx}) }>
-		    {name}
-		  </Button>)
+		    major_modes.map((name, idx) =>
+		      <Button className="modebutton" key={idx} size="lg" variant="primary" active={major_mode === idx} onClick={() => socket.emit('conf_state_update', {major_mode:idx}) }>
+			{name}
+		      </Button>)
 		  }
 		</Tab.Pane>
 		<Tab.Pane eventKey="config">
-		  <Input onChange={ (text) => {} } />
+		  {
+		    Object.keys(options).map((key, idx) => {
+		      if (options[key].type === 'dropdown') {
+			return <DropdownButton key={idx} title={'A: '+options[key].values[options[key].value]}>
+			  {
+			    options[key].values.map((name, idx) =>
+			      <Dropdown.Item key={idx} onSelect={() => socket.emit('conf_state_update', {options:{[key]:{value:idx}}}) } >{name}
+			      </Dropdown.Item>
+			    )
+			  }
+			</DropdownButton>;
+		      }
+		      return null;
+		    })
+		    /*<Input onChange={ (text) => {} } />*/
+		  }
 		</Tab.Pane>
 		<DataGraphTabPane />
 	      </Tab.Content>
