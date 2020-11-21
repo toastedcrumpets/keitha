@@ -1,18 +1,15 @@
 #!/usr/bin/python3
 import asyncio
-import socketio
 import time
 import random
 
+from common import *
+
+# This is the worker's copy of the conf_state
+
+conf_state['major_modes'] = ['DCV1', 'DCV2', 'DCV3', 'DCV4']
+
 ############# Global variables/state
-from collections.abc import Mapping
-def deep_update(d1, d2):
-    #This function merges updates to dictionaries
-    if all((isinstance(d, Mapping) for d in (d1, d2))):
-        for k, v in d2.items():
-            d1[k] = deep_update(d1.get(k), v)
-        return d1
-    return d2
 
 #Details on the ADC modes
 adc_modes_info=[
@@ -30,24 +27,12 @@ def updateOptions():
     conf_state['options'] = {
         'gain': {
             'type':'dropdown',
-            'values':[str(Vmax)+' V' for gain, Vmax, lsb in adc_modes_info],
-            'value':1
+            'values':["auto"]+[str(Vmax)+' V' for gain, Vmax, lsb in adc_modes_info],
+            'value':0,
+            'display':True, #Show this below the main display
+            'name':'Range',
         }
     }
-
-# This is used to output status/payloads to the console
-debug=False
-
-# This is the worker's copy of the conf_state from the server. Here we
-# just put what we absolutely need to run, everything else will be
-# filled in by the server on connection.
-conf_state = {
-    'triggerMode':0, #Are we triggered continuously (2), single (1), or hold (0)
-    'major_mode':0, #For this worker, this is the ADC channel, but might be DCV, ACV, etc in a DMM
-    'major_modes':['DCV1', 'DCV2', 'DCV3', 'DCV4'],
-    'options':{ #What options are available for this mode.
-    }, 
-}
 
 updateOptions()#This loads the initial options
 
@@ -142,17 +127,45 @@ async def send_readings():
 ############## The actual reading code
 import Adafruit_ADS1x15
 adc = Adafruit_ADS1x15.ADS1115()
+max_adc_reading = 2**15 - 1 #16bit ADC, but first bit is sign, so max value is 2^15-1
 
 async def make_reading():
     global unsent_readings, Hz_measure_last_reading_time, Hz_measure_interval_sum, Hz_measure_samples
     if conf_state['triggerMode'] > 0:        
+        channel=conf_state['major_mode']
+        
         gain_mode=0
         if 'gain' in conf_state['options']: #We have to check the option has been set
             gain_mode = conf_state['options']['gain']['value']
-        
-        channel=conf_state['major_mode']
-        reading = adc.read_adc(channel, gain=adc_modes_info[gain_mode][0], data_rate=860) #860 is max speed
-        reading_time = time.perf_counter()
+            #We make gain mode 0 autoscale, and everything else is just the ADC mode +1
+            if gain_mode == 0:
+                #Do a full scale reading
+                reading_time1 = time.perf_counter()
+                reading1 = adc.read_adc(channel, gain=adc_modes_info[0][0], data_rate=860) #860 is max speed
+                reading1_real = reading1 * adc_modes_info[gain_mode][2]
+                #Search through the ADC modes for the range which covers this value
+                for i in range(len(adc_modes_info)):
+                    if reading1_real > adc_modes_info[i][1]:
+                        #Range too small, don't go any further
+                        break
+                    gain_mode = i
+                reading_time2 = time.perf_counter()
+                reading2 = adc.read_adc(channel, gain=adc_modes_info[gain_mode][0], data_rate=860) #860 is max speed
+                if reading2 == max_adc_reading:
+                    #Overrange, just return the full scale result
+                    gain_mode=0
+                    reading = reading1
+                    reading_time = reading_time1
+                else:
+                    reading = reading2
+                    reading_time = reading_time2
+            else:
+                gain_mode -= 1
+                reading_time = time.perf_counter()
+                reading = adc.read_adc(channel, gain=adc_modes_info[gain_mode][0], data_rate=860)  #860 is max speed
+
+        if reading == max_adc_reading:
+            reading == +float('inf')
         unsent_readings[0].append(reading_time)
         unsent_readings[1].append(reading * adc_modes_info[gain_mode][2])
 

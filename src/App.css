@@ -98,11 +98,17 @@ a:hover {
     text-align:right;
 }
 
+#Display {
+    padding-top:60px;
+    color:LightGreen;
+    line-height:1;
+}
+
+#TopDisplay {
+}
 
 #MainDisplay {
-    color:LightGreen;
     font-size:5.4em;
-    padding-top:52px;
     transition:font-size 0.5s ease 0s;
     text-align:right;
 }
@@ -111,10 +117,13 @@ a:hover {
     font-size:7.0em;    
 }
 
+#BottomDisplay {
+}
+
 #chart {
     flex:1;
     width:100%;
-    --background-overlay:black;
+    --background-overlay:transparent;
 }
 
 .modebutton {

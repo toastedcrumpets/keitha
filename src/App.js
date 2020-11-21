@@ -97,8 +97,10 @@ function TopMenu() {
 }
 
 function LargeDisplay() {
-  const { reading, tabs_minimised } = AppStore.useState(s => ({
-    reading:s.last_reading, tabs_minimised:s.ui_state.tabs_minimised }));
+  const [ reading, tabs_minimised, major_modes, major_mode ] = AppStore.useState(s => ([
+    s.last_reading, s.ui_state.tabs_minimised,
+    s.conf_state.major_modes, s.conf_state.major_mode,
+  ]));
   
   var output;;
   if (reading === undefined)
@@ -106,9 +108,18 @@ function LargeDisplay() {
   else
     output = numberformat(reading, 6)+'V';
   
-  return (<div id="MainDisplay" className={"text-monospace " + (tabs_minimised ? 'minimized': '')}>
-    { output }
-  </div>);
+  return (
+    <div id="Display">
+      <div id="TopDisplay" className="text-monospace">
+	{major_modes[major_mode]}
+      </div>
+      <div id="MainDisplay" className={"text-monospace " + (tabs_minimised ? 'minimized': '')}>
+	{ output }
+      </div>
+      <div id="BottomDisplay" className="text-monospace">
+      </div>
+    </div>
+  );
 
 }
 
@@ -269,7 +280,7 @@ function DataGraphTabPane() {
 
 /**
  * Performs a deep merge of objects and returns new object. Does not modify
- * objects (immutable) and merges arrays via concatenation.
+ * objects (immutable) and merges arrays by overwrite.
  *
  * @param {...object} objects - Objects to merge
  * @returns {object} New object with merged key/values
@@ -283,7 +294,10 @@ function mergeDeep(...objects) {
       const oVal = obj[key];
       
       if (Array.isArray(pVal) && Array.isArray(oVal)) {
-        prev[key] = pVal.concat(...oVal);
+	//Line below merges by concatenation
+        //prev[key] = pVal.concat(...oVal);
+	//Line below merges by overwrite
+        prev[key] = oVal;
       }
       else if (isObject(pVal) && isObject(oVal)) {
         prev[key] = mergeDeep(pVal, oVal);
@@ -419,7 +433,7 @@ function App() {
 		  {
 		    Object.keys(options).map((key, idx) => {
 		      if (options[key].type === 'dropdown') {
-			return <DropdownButton key={idx} title={'A: '+options[key].values[options[key].value]}>
+			return <DropdownButton size="lg" key={idx} title={options[key].values[options[key].value]}>
 			  {
 			    options[key].values.map((name, idx) =>
 			      <Dropdown.Item key={idx} onSelect={() => socket.emit('conf_state_update', {options:{[key]:{value:idx}}}) } >{name}
