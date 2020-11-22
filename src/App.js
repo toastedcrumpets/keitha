@@ -441,8 +441,10 @@ function App() {
 			    )
 			  }
 			</DropdownButton>;
-		      }
-		      return null;
+		      } else if (options[key].type === 'integer') {
+			return <Input key={idx} onChange={ (text) => {} } />;
+		      } else
+			return null;
 		    })
 		    /*<Input onChange={ (text) => {} } />*/
 		  }

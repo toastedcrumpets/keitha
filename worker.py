@@ -31,6 +31,14 @@ def updateOptions():
             'value':0,
             'display':True, #Show this below the main display
             'name':'Range',
+        },
+        'averages': {
+            'type':'integer',
+            'min':1,
+            'max':512,
+            'value':0,
+            'display':True, #Show this below the main display
+            'name':'Range',
         }
     }
 
@@ -129,45 +137,49 @@ import Adafruit_ADS1x15
 adc = Adafruit_ADS1x15.ADS1115()
 max_adc_reading = 2**15 - 1 #16bit ADC, but first bit is sign, so max value is 2^15-1
 
+def perform_reading():
+    #Take a single reading from the ADC, including auto-ranging if enabled, and return the value along with the reading time
+    channel = conf_state['major_mode']
+    gain_mode = conf_state['options']['gain']['value']
+    #We make gain mode 0 autoscale, and everything else is just the ADC mode +1
+    if gain_mode == 0:
+        #Do a full scale reading
+        reading_time1 = time.perf_counter()
+        reading1 = adc.read_adc(channel, gain=adc_modes_info[0][0], data_rate=860) #860 is max speed
+        reading1_real = reading1 * adc_modes_info[gain_mode][2]
+        #Search through the ADC modes for the range which covers this value
+        for i in range(len(adc_modes_info)):
+            if reading1_real > adc_modes_info[i][1]:
+                #Range too small, don't go any further
+                break
+            gain_mode = i
+        reading_time2 = time.perf_counter()
+        reading2 = adc.read_adc(channel, gain=adc_modes_info[gain_mode][0], data_rate=860) #860 is max speed
+        if reading2 == max_adc_reading:
+            #Overrange, just return the full scale result
+            gain_mode=0
+            reading = reading1
+            reading_time = reading_time1
+        else:
+            reading = reading2
+            reading_time = reading_time2
+    else:
+        gain_mode -= 1
+        reading_time = time.perf_counter()
+        reading = adc.read_adc(channel, gain=adc_modes_info[gain_mode][0], data_rate=860)  #860 is max speed
+
+    if reading == max_adc_reading:
+        reading == +float('inf')
+    
+    return reading_time, reading * adc_modes_info[gain_mode][2]
+
 async def make_reading():
     global unsent_readings, Hz_measure_last_reading_time, Hz_measure_interval_sum, Hz_measure_samples
     if conf_state['triggerMode'] > 0:        
-        channel=conf_state['major_mode']
-        
-        gain_mode=0
-        if 'gain' in conf_state['options']: #We have to check the option has been set
-            gain_mode = conf_state['options']['gain']['value']
-            #We make gain mode 0 autoscale, and everything else is just the ADC mode +1
-            if gain_mode == 0:
-                #Do a full scale reading
-                reading_time1 = time.perf_counter()
-                reading1 = adc.read_adc(channel, gain=adc_modes_info[0][0], data_rate=860) #860 is max speed
-                reading1_real = reading1 * adc_modes_info[gain_mode][2]
-                #Search through the ADC modes for the range which covers this value
-                for i in range(len(adc_modes_info)):
-                    if reading1_real > adc_modes_info[i][1]:
-                        #Range too small, don't go any further
-                        break
-                    gain_mode = i
-                reading_time2 = time.perf_counter()
-                reading2 = adc.read_adc(channel, gain=adc_modes_info[gain_mode][0], data_rate=860) #860 is max speed
-                if reading2 == max_adc_reading:
-                    #Overrange, just return the full scale result
-                    gain_mode=0
-                    reading = reading1
-                    reading_time = reading_time1
-                else:
-                    reading = reading2
-                    reading_time = reading_time2
-            else:
-                gain_mode -= 1
-                reading_time = time.perf_counter()
-                reading = adc.read_adc(channel, gain=adc_modes_info[gain_mode][0], data_rate=860)  #860 is max speed
 
-        if reading == max_adc_reading:
-            reading == +float('inf')
+        reading_time, reading = perform_reading()
         unsent_readings[0].append(reading_time)
-        unsent_readings[1].append(reading * adc_modes_info[gain_mode][2])
+        unsent_readings[1].append(reading)
 
         #Update the measurements of the intervals for reading, but
         #only if in continuous sampling mode.
