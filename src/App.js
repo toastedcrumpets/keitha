@@ -4,7 +4,7 @@ import { Store } from 'pullstate';
 
 import socketIOClient from 'socket.io-client';
 
-import { KeyboardProvider, Input } from './Keyboard';
+import { KeyboardProvider, TouchInput } from './Keyboard';
 
 import { Button, ButtonGroup, ButtonToolbar, Container, Row, Col, Nav, NavItem, NavLink, Dropdown, DropdownButton, Tab } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -36,8 +36,8 @@ const AppStore = new Store({
   connect_status:"Connecting...",
   last_reading:undefined,
   last_time:undefined,
+  //Whenever datarevision is changed, the chart is rebuilt. This is to allow data to be deleted/cleared as the chart library doesn't support this for performance reasons.
   datarevision:0,
-  realtime:true,
 });
 
 ///// The actual measurements
@@ -183,7 +183,7 @@ function StatisticsPages() {
 let chart = null;
 
 function DataGraphTabPane() {
-  const [ datarevision, realtime ] = AppStore.useState(s => [s.datarevision, s.realtime]);
+  const [ datarevision ] = AppStore.useState(s => [s.datarevision]);
 
   const plotRef = useRef();
   
@@ -206,7 +206,7 @@ function DataGraphTabPane() {
 	      minDomainExtent: 1,
             }
 	  },
-	  realTime: realtime,
+	  realTime: true,
 	});
 
 	var style = document.createElement( 'style' );
@@ -222,11 +222,11 @@ function DataGraphTabPane() {
       }
     };
 
-    dispose();
+    //dispose();
     trycreate();
     //Clean up the chart later!
     return dispose;
-  }, [datarevision, ]);  
+  }, [datarevision]); //This dependency makes sure that the chart is reinitialised whenever the buffer is reset/cleared. 
 
   const chartFollow = () => {
     if (chart !== null)
@@ -311,6 +311,40 @@ function mergeDeep(...objects) {
   }, {});
 }
 
+
+function OptionControl({ option, o_key}) {
+  if (option.type === 'dropdown') {
+    return <div className="option">
+      <span>
+	{option.name}
+      </span>
+      <DropdownButton size="lg" title={option.values[option.value]}>
+	{
+	  option.values.map((name, idx) =>
+	    <Dropdown.Item key={idx} onSelect={() => socket.emit('conf_state_update', {options:{[o_key]:{value:idx}}}) } >{name}
+	    </Dropdown.Item>
+	  )
+	}
+      </DropdownButton>
+    </div>;
+  } else {
+    return <div className="option">
+      <span>
+	{option.name}
+      </span>
+      <TouchInput onChange={ (value) => socket.emit('conf_state_update', {options:{[o_key]:{value}}}) } value={option.value} mode={option.type} units={option.units} />
+    </div>;
+  }
+}
+
+function OptionControls() {
+  var [options ] = AppStore.useState(s => ([
+    s.conf_state.options,
+  ]));
+  
+  return Object.keys(options).map((key, idx) => <OptionControl option={options[key]} key={key} o_key={key} />)
+}
+
 var socket = null;
 
 function App() {
@@ -380,14 +414,12 @@ function App() {
     return () => socket.disconnect();
   }, []);
 
-  var [tabs_minimised, major_mode, major_modes, options ] = AppStore.useState(s => ([
+  var [tabs_minimised, major_mode, major_modes ] = AppStore.useState(s => ([
     s.ui_state.tabs_minimised,
     s.conf_state.major_mode,
     s.conf_state.major_modes,
-    s.conf_state.options,
   ]));
   
-  console.log(options);
   return (
     <KeyboardProvider>
       <TopMenu/>
@@ -430,24 +462,7 @@ function App() {
 		  }
 		</Tab.Pane>
 		<Tab.Pane eventKey="config">
-		  {
-		    Object.keys(options).map((key, idx) => {
-		      if (options[key].type === 'dropdown') {
-			return <DropdownButton size="lg" key={idx} title={options[key].values[options[key].value]}>
-			  {
-			    options[key].values.map((name, idx) =>
-			      <Dropdown.Item key={idx} onSelect={() => socket.emit('conf_state_update', {options:{[key]:{value:idx}}}) } >{name}
-			      </Dropdown.Item>
-			    )
-			  }
-			</DropdownButton>;
-		      } else if (options[key].type === 'integer') {
-			return <Input key={idx} onChange={ (text) => {} } />;
-		      } else
-			return null;
-		    })
-		    /*<Input onChange={ (text) => {} } />*/
-		  }
+		  <OptionControls/>
 		</Tab.Pane>
 		<DataGraphTabPane />
 	      </Tab.Content>

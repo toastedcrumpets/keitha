@@ -133,3 +133,30 @@ a:hover {
     margin-top:0.5em;
     margin-bottom:0.5em;
 }
+
+.option {
+    display:inline-block;
+    width:50vw;
+}
+
+.option span {
+    padding:0.5em;
+    display:inline-block;
+    width:25vw;
+    text-align:right;
+    padding-right:1em;
+}
+
+.option input, .option .dropdown {
+    display:inline-block;
+    width:20vw;
+}
+
+.option .dropdown button {
+    width:20vw;
+}
+
+.option input {
+    background:black;
+    color:white;
+}

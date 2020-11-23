@@ -1,0 +1,37 @@
+#keyboard_overlay {
+    position:absolute;
+    bottom:0;
+    left:0;
+    right:0;
+    top:0;
+    opacity:0.5;
+    background-color:black;
+}
+
+#keyboard_container {
+    position:absolute;
+    bottom:0;
+    left:50%;
+    transform:translate(-50%, -50%);
+    top:50%;
+}
+
+.hg-theme-default .hg-button {
+    min-width:50px;
+    min-height:50px;
+}
+
+.hg-theme-default .hg-button.disable_key {
+    pointer-events:none;
+    background-color:grey;
+    color:darkgray;
+}
+
+.hg-theme-default .hg-button.action_keys {
+    background-color:darkblue;
+    min-width:100px;
+}
+
+.hg-theme-default {
+    font-family: SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace !important;
+}

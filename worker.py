@@ -33,12 +33,13 @@ def updateOptions():
             'name':'Range',
         },
         'averages': {
-            'type':'integer',
+            'type':'int',
             'min':1,
             'max':512,
-            'value':0,
+            'value':1,
             'display':True, #Show this below the main display
-            'name':'Range',
+            'name':'Averages',
+            'units':'',
         }
     }
 
@@ -177,7 +178,14 @@ async def make_reading():
     global unsent_readings, Hz_measure_last_reading_time, Hz_measure_interval_sum, Hz_measure_samples
     if conf_state['triggerMode'] > 0:        
 
-        reading_time, reading = perform_reading()
+        averages = int(conf_state['options']['averages']['value'])
+        readings=[]
+        for i in range(averages):
+            readings.append(perform_reading())
+
+        reading_time = sum(map(lambda x: x[0], readings)) / averages
+        reading = sum(map(lambda x: x[1], readings)) / averages
+        
         unsent_readings[0].append(reading_time)
         unsent_readings[1].append(reading)
 
