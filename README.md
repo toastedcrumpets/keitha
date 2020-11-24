@@ -30,7 +30,7 @@ Copy the config.txt to the /boot folder. This will set up the display
 to its native resolution, then reboot.
 
 ```sh
-sudo cp config.txt /boot/config.txt
+sudo cp pi_system_files/config.txt /boot/config.txt
 sudo reboot
 ```
 
@@ -64,7 +64,6 @@ This will let you connect to the frontend on port 3000
 (i.e. http://localhost:3000 if you're on the raspberry pi).
 
 
-
 ## Wiring up the ADC
 
 Follow this [excellent
@@ -76,3 +75,9 @@ server.
 
 ## Running the backend
 
+The development server above gives a nicer experience when changing
+the code (immediate/automatic refresh, access to react developer
+tools); however, the production server is the server.py script. This
+hosts the interface at http://localhost:8080/index.html.
+
+To make this start at boot
