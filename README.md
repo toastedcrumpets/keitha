@@ -8,7 +8,7 @@ touchscreen](https://amzn.to/2I995Gk). I've also used a generic
 chinese clone of [Adafruit's ADS1115 16bit
 ADC](https://amzn.to/34WOzBM) as my demonstration sensor.
 
-## Getting boot set up
+## Setting up the screen's native resolution
 
 First, install raspbian on your pi, get one of the versions with a
 desktop. Follow the normal install instructions and update the system.
@@ -25,7 +25,7 @@ cd keitha
 ```
 
 Copy everything to the /boot folder. This will set up the display
-to its native resolution, enable a splash screen at startup.
+to its native resolution and enable a splash screen at startup.
 
 ```sh
 sudo cp pi_system_files/boot/* /boot/*
@@ -54,10 +54,11 @@ This will get overwritten on updates, but this is easily fixed by
 rerunning the above command. This splash only appears for an instant,
 as the GPU driver blanks the screen on X startup. You can disable the
 GPU driver by commenting out `dtoverlay=vc4-fkms-v3d` in
-`/boot/config.txt`, but your interface performance will suffer! I'll
-revise this if I ever find a way around it.
+`/boot/config.txt` to keep the splash for longer, but your interface
+performance will suffer! I'll revise this if I ever find a way around
+it, instead I focussed on reducing boot time (see below).
 
-## Setting up the frontend
+## Setting up the web-page frontend
 
 You will need to install a lot of prerequisites. First, install `npm`
 along with the python dependencies.
@@ -100,7 +101,6 @@ files, then enable the services and start them.
 ```sh
 sudo cp pi_system_files/lib/systemd/system/keitha-* /lib/systemd/system/
 sudo systemctl enable keitha-server.service
-r9r97214
 sudo systemctl enable keitha-worker.service
 sudo systemctl start keitha-server.service
 sudo systemctl start keitha-worker.service
@@ -169,7 +169,6 @@ graphical.target @13.552s
                           └─boot.mount @3.890s +48ms
                             └─systemd-fsck@dev-disk-by\x2dpartuuid-cf17e282\x2d01.service @2.839s +528ms
                               └─dev-disk-by\x2dpartuuid-cf17e282\x2d01.device @2.828s
-
 ```
 
 So lets start pruning. `exim4` is a mail server, that can
@@ -203,7 +202,8 @@ sudo systemctl  disable systemd-timesyncd.service
 sudo systemctl  disable raspi-config.service
 ```
 
-By now we've gotten a pretty quick start to the graphical.target, but this still takes a while to boot
+By now we've gotten a pretty quick start to the graphical.target, but
+this still takes a while to boot
 
 ## (optional) Running the development server
 
