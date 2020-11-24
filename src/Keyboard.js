@@ -220,7 +220,7 @@ export function TouchInput({ onChange, mode, units, value }) {
   const [loadKeyboard, setLoad] = React.useState(false);
 
   const opts = React.useContext(KeyboardContext);
-  const { integer, float, positive_only, numeric } = parseMode(opts);
+  const { integer, float, numeric } = parseMode(opts);
 
   var text = value;
   if (integer) 

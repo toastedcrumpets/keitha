@@ -4,9 +4,9 @@ This project was inspired by the wonderful interface on Keithley's
 modern DMMs and sourcemeters.
 
 It uses a raspberry pi 4 (~£30) and [a cheap 7-inch 1024x600
-touchscreen](https://amzn.to/2I995Gk). I've also used a generic clone
-of [Adafruit's ADS1115 16bit ADC](https://amzn.to/34WOzBM) as my
-demonstration sensor.
+touchscreen](https://amzn.to/2I995Gk). I've also used a generic
+chinese clone of [Adafruit's ADS1115 16bit
+ADC](https://amzn.to/34WOzBM) as my demonstration sensor.
 
 ## Getting boot set up
 
@@ -20,7 +20,7 @@ also enable the splash screen.
 Open a terminal, and clone this repository, then go into it.
 
 ```sh
-git clone :keitha
+git clone https://github.com/toastedcrumpets/keitha.git
 cd keitha
 ```
 
@@ -217,3 +217,28 @@ This will let you connect to the frontend on port 3000
 (i.e. http://localhost:3000 if you're on the raspberry pi). The
 frontend will not work until the backend `server.py` and `worker.py`
 are started. If you close this at any point then the development 
+
+
+## TODO/Future ideas
+
+These are some general ideas for improving the framework:
+
+* [ ] Explore faster communications. 
+ - [ ] Maybe move to native websockets instead of socket.io, and try binary data for readings to lower frontend overhead.
+ - [ ] Maybe try polling instead of pushing readings updates. When the frontend falls behind it can't ever catch up.
+* [ ] Improve the graph interface
+ - [ ] x-axis origin entirely depends on the origin of python's time.perf_counter. Maybe translate this to actual time? 
+ - [ ] Add a grid
+ - [ ] Improve rendering of the axis. At the moment it is hard to read the values.
+* [ ] Make the Pi LXI "compatible". We have remote frontpanel access
+      already, we just need to add remote SCPI commands.
+* [ ] Give examples of C++ worker and servers. This will massively improve CPU utilisation.
+
+These are some ideas for projects with the screen:
+
+* [ ] Design a 3D printable case for the screen and pi, including some
+      front banana jacks. Make the pi expose its USB and network ports
+      out the back. This case can then be adapted for the projects below:
+* [ ] Make a full DMM using a ADS1256 module to learn about analogue front-end/protection.
+* [ ] A [poor-man's Source Measure Unit (SMU)](https://poormanssmu.wordpress.com/)
+* [ ] A control interface for old Mass Flow Controllers.
