@@ -70,13 +70,18 @@ function ConnectStatus() {
   </Nav.Item>;
 }
 
-function TopMenu() {
-  const [ triggerMode, triggerRate ] = AppStore.useState(s => ([s.conf_state.triggerMode, s.conf_state.triggerRate]));
+function TriggerRate() {
+  const [ triggerRate ] = AppStore.useState(s => ([s.conf_state.triggerRate]));
 
   var rate_status = "- Hz";
   if (triggerRate >= 0) {
     rate_status = numberformat(1.0/triggerRate, 3, false)+"Hz"
   }
+  return <>{rate_status}</>
+}
+
+function TopMenu() {
+  const [ triggerMode ] = AppStore.useState(s => ([s.conf_state.triggerMode]));
   
   return <Nav className="topnav">
     <Dropdown as={NavItem} className="mr-auto">
@@ -89,7 +94,7 @@ function TopMenu() {
     </Dropdown>
     <Nav.Item>
       <Nav.Link eventKey="disabled" disabled>
-	{rate_status}
+	<TriggerRate/>
       </Nav.Link>
     </Nav.Item>
     <ConnectStatus/>
@@ -203,7 +208,7 @@ function DataGraphTabPane() {
             },
             y: {
               autoRange: false,
-	      minDomainExtent: 1,
+	      minDomainExtent: 0.001, //A reasonable default scale of 1 mV
             }
 	  },
 	  realTime: true,
@@ -353,14 +358,56 @@ function LogPage() {
 var socket = null;
 
 function App() {
+  
+  //Check every second for rate updates, then calculate the rate
+  useEffect(() => {
+
+    var startTime = -1;
+    var lastIndex = -1;
+    
+    var timer = null;
+
+    function runner() {
+      if (readings_state.length > 1) {
+	
+	if (startTime !== readings_state[0].x) {
+	  //Looks like the array refreshed! Start again
+	  lastIndex = 0;
+	  startTime = readings_state[0].x;
+	}
+
+	if (lastIndex !== readings_state.length - 1) {
+	  //OK new readings came in, calculate the refresh rate
+	  const rate = (readings_state[readings_state.length - 1].x - readings_state[lastIndex].x) / (readings_state.length - 1 - lastIndex);
+	  lastIndex = readings_state.length - 1;
+	  AppStore.update(s => { 
+	    s.conf_state.triggerRate = rate;
+	  });
+	} else {
+	  //No new readings, so clear the refresh rate
+	  AppStore.update(s => { 
+	    s.conf_state.triggerRate = -1;
+	  });
+	}
+      }
+      
+      timer = setTimeout(function () { runner(); }, 1000);
+    };
+
+    runner();
+    
+    return () => clearTimeout(timer);
+  }, []);
+  
   useEffect(() => {
     //The python backend is always at 8080; however, we like developing
     //with the `npm start` server as it automatically updates the pages (and
     //has cool debugging build options turned on). So we do a bit of
     //wrangling to make the npm server work with the "production" python
     //server.
-    socket = socketIOClient(window.location.hostname+':8080');
-
+    
+    socket = socketIOClient(window.location.hostname+':8080', {transports:['websocket']} );
+    
     socket.on('disconnect', (reason) => {
       AppStore.update(s => {s.connected = false; s.connect_status = "Disconnected"});
       if (reason === 'io server disconnect') {
@@ -458,13 +505,13 @@ function App() {
 	    </Row>
 	    <Row>
 	      <Tab.Content>
-		<Tab.Pane eventKey="log">
+		<Tab.Pane unmountOnExit={true}  eventKey="log">
 		  <LogPage />
 		</Tab.Pane>
-		<Tab.Pane eventKey="stats">
+		<Tab.Pane unmountOnExit={true} eventKey="stats">
 		  <StatisticsPages/>
 		</Tab.Pane>
-		<Tab.Pane eventKey="mode">
+		<Tab.Pane unmountOnExit={true} eventKey="mode">
 		  {
 		    major_modes.map((name, idx) =>
 		      <Button className="modebutton" key={idx} size="lg" variant="primary" active={major_mode === idx} onClick={() => socket.emit('conf_state_update', {major_mode:idx}) }>
@@ -472,7 +519,7 @@ function App() {
 		      </Button>)
 		  }
 		</Tab.Pane>
-		<Tab.Pane eventKey="config">
+		<Tab.Pane unmountOnExit={true} eventKey="config">
 		  <OptionControls/>
 		</Tab.Pane>
 		<DataGraphTabPane />

@@ -48,19 +48,13 @@ updateOptions()#This loads the initial options
 # How often to upload readings to the server (tick). We rate limit
 # this as the overhead of uploading 1000's of readings per second
 # individually is pointless for rendering and also very slow.
-FPS = 30
+FPS = 20
 
 # The lists of readings to be uploaded in the next "tick"
 unsent_readings = [
     [],
     []
 ]
-
-# The variables used to measure the trigger/measuring rate
-Hz_measure_last_reading_time = None  #When the last reading was taken
-Hz_measure_interval_sum = 0  #The sum of all intervals measured since the last report
-Hz_measure_samples = 0 #How many intervals have been sampled
-Hz_measure_last_report = -1 #Used to track what was last sent (to prevent spurious updates)
 
 ############# Communication setup and maintainance
 
@@ -92,7 +86,7 @@ def disconnect():
 # Handle conf_state updates coming in from the server
 @sio.event
 async def conf_state_update(payload):
-    global Hz_measure_last_reading_time, conf_state
+    global conf_state
     if debug:
         print("Conf update ", payload)
 
@@ -103,14 +97,10 @@ async def conf_state_update(payload):
     #Actually merge the updates
     conf_state = deep_update(conf_state, payload)
 
-    #If we're not in continuous trigger mode, we can't really measure
-    #the trigger rate. Reset the measurement.
-    if (conf_state['triggerMode'] != 2):
-        Hz_measure_last_reading_time = None
-
 ############# Periodic upload of readings
+count=0
 async def send_readings():
-    global unsent_readings, Hz_measure_interval_sum, Hz_measure_samples, Hz_measure_last_report
+    global count, unsent_readings
     to_send = len(unsent_readings[0])
     if to_send > 0:
         payload = unsent_readings
@@ -118,20 +108,6 @@ async def send_readings():
         await sio.emit('readings_state_add', payload)
         if debug:
             print("Uploading readings")
-
-    if conf_state['triggerMode'] == 2:
-        if Hz_measure_samples > 0:
-            report = Hz_measure_interval_sum / Hz_measure_samples
-            Hz_measure_interval_sum = 0
-            Hz_measure_samples = 0
-            if report != Hz_measure_last_report:
-                Hz_measure_last_report = report
-                await sio.emit('conf_state_update', {'triggerRate':  report})
-    else:
-        report = -1
-        if report != Hz_measure_last_report:
-            Hz_measure_last_report = report
-            await sio.emit('conf_state_update', {'triggerRate':  report})
             
 ############## The actual reading code
 import Adafruit_ADS1x15
@@ -175,9 +151,8 @@ def perform_reading():
     return reading_time, reading * adc_modes_info[gain_mode][2]
 
 async def make_reading():
-    global unsent_readings, Hz_measure_last_reading_time, Hz_measure_interval_sum, Hz_measure_samples
+    global unsent_readings
     if conf_state['triggerMode'] > 0:        
-
         averages = int(conf_state['options']['averages']['value'])
         readings=[]
         for i in range(averages):
@@ -189,14 +164,6 @@ async def make_reading():
         unsent_readings[0].append(reading_time)
         unsent_readings[1].append(reading)
 
-        #Update the measurements of the intervals for reading, but
-        #only if in continuous sampling mode.
-        if (conf_state['triggerMode'] == 2):
-            if Hz_measure_last_reading_time != None:
-                Hz_measure_interval_sum += reading_time - Hz_measure_last_reading_time
-                Hz_measure_samples += 1
-            Hz_measure_last_reading_time = reading_time
-            
         if conf_state['triggerMode'] == 1:
             #We have to do this now to prevent extra readings while
             #waiting for the server to change the state
