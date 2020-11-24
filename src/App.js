@@ -345,6 +345,11 @@ function OptionControls() {
   return Object.keys(options).map((key, idx) => <OptionControl option={options[key]} key={key} o_key={key} />)
 }
 
+function LogPage() {
+  const [text, setText] = React.useState("Enter something here to test text entry!");
+  return <TouchInput onChange={ (value) => setText(value) } value={text} mode="string" units="" />;
+}
+
 var socket = null;
 
 function App() {
@@ -430,6 +435,9 @@ function App() {
 	    <Row>
 	      <Nav variant="tabs">
 		<Nav.Item>
+		  <Nav.Link eventKey="log">Log</Nav.Link>
+		</Nav.Item>
+		<Nav.Item>
 		  <Nav.Link eventKey="stats">Stats</Nav.Link>
 		</Nav.Item>
 		<Nav.Item>
@@ -450,6 +458,9 @@ function App() {
 	    </Row>
 	    <Row>
 	      <Tab.Content>
+		<Tab.Pane eventKey="log">
+		  <LogPage />
+		</Tab.Pane>
 		<Tab.Pane eventKey="stats">
 		  <StatisticsPages/>
 		</Tab.Pane>

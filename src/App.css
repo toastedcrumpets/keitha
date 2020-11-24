@@ -25,7 +25,7 @@ main {
     background-color:#555;
 }
 
-.topnav, .nav-link, .dropdown-menu, .dropdown-item {
+.topnav, .nav-link, .dropdown-menu, {
     color:rgba(255,255,255,.8);
     background-color:#343a40;
 }
@@ -35,6 +35,7 @@ main {
     top:0;
     left:0;
     right:0;
+    border-bottom:2px solid grey;
 }
 
 a:hover {
@@ -158,5 +159,14 @@ a:hover {
 
 .option input {
     background:black;
+    color:white;
+}
+
+.dropdown-menu.show {
+    background-color:black;
+    border:3px solid #0062cc;
+}
+
+.dropdown-item {
     color:white;
 }

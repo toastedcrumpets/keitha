@@ -27,7 +27,7 @@ def updateOptions():
     conf_state['options'] = {
         'gain': {
             'type':'dropdown',
-            'values':["auto"]+[str(Vmax)+' V' for gain, Vmax, lsb in adc_modes_info],
+            'values':["Auto"]+[str(Vmax)+' V' for gain, Vmax, lsb in adc_modes_info],
             'value':0,
             'display':True, #Show this below the main display
             'name':'Range',

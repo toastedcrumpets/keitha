@@ -35,3 +35,7 @@
 .hg-theme-default {
     font-family: SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace !important;
 }
+
+.hg-theme-default .hg-button.hg-button-space {
+    min-width:400px;
+}

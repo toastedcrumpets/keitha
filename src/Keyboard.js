@@ -35,18 +35,18 @@ function parseMode(opts) {
 function KeyboardWidget({children}) {
   var layouts = {
     text: [
-      '` 1 2 3 4 5 6 7 8 9 0 + - = {bksp}',
-      '{tab} q w e r t y u i o p [ ] \\',
-      '{lock} a s d f g h j k l ; \'',
-      '{shift} z x c v b n m , . / {shift}',
+      '` 1 2 3 4 5 6 7 8 9 0 - = {bksp}',
+      '{tab} q w e r t y u i o p [ ]',
+      '{shift} a s d f g h j k l ; \' #',
+      '\\ z x c v b n m , . / {clear}',
       '{enter} {space} {cancel}'
     ],
     shift_text: [
-      '~ ! @ # $ % ^ & * ( ) _ + {bksp}',
-      '{tab} Q W E R T Y U I O P { } |',
-      '{lock} A S D F G H J K L : " {enter}',
-      '{shift} Z X C V B N M < > ? {shift}',
-      '{space} {cancel}'
+      '¬ ! " £ $ % ^ & * ( ) _ = {bksp}',
+      '{tab} Q W E R T Y U I O P { }',
+      '{shift} A S D F G H J K L : @ ~',
+      '| Z X C V B N M < > ? {clear}',
+      '{enter} {space} {cancel}'
     ],
     numerical: [
       "{clear} {bksp}",
