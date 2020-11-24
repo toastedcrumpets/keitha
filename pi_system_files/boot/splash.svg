@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="1024"
+   height="600"
+   viewBox="0 0 270.93333 158.75"
+   version="1.1"
+   id="svg8"
+   inkscape:version="0.92.5 (2060ec1f9f, 2020-04-08)"
+   sodipodi:docname="splash.svg"
+   inkscape:export-filename="splash.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96">
+  <defs
+     id="defs2" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="1"
+     inkscape:pageshadow="2"
+     inkscape:zoom="0.98994949"
+     inkscape:cx="219.10308"
+     inkscape:cy="368.95238"
+     inkscape:document-units="mm"
+     inkscape:current-layer="layer1"
+     showgrid="true"
+     units="px"
+     inkscape:snap-page="true"
+     inkscape:window-width="2560"
+     inkscape:window-height="1375"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1">
+    <inkscape:grid
+       type="xygrid"
+       id="grid10" />
+  </sodipodi:namedview>
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(0,-138.25001)">
+    <rect
+       id="rect12"
+       width="270.93332"
+       height="158.75"
+       x="0"
+       y="138.25002"
+       style="stroke-width:0.26458332;fill:#003838;fill-opacity:1" />
+    <rect
+       style="fill:#004242;fill-opacity:1;stroke-width:0.26458332;stroke:#008000"
+       id="rect4538"
+       width="169.33333"
+       height="33.866665"
+       x="50.800003"
+       y="200.69168" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.58333302px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:0.26458332;"
+       x="97.841057"
+       y="225.19044"
+       id="text4536"><tspan
+         sodipodi:role="line"
+         id="tspan4534"
+         x="97.841057"
+         y="225.19044"
+         style="font-style:italic;font-variant:normal;font-weight:bold;font-stretch:normal;font-size:21.16666603px;font-family:monospace;-inkscape-font-specification:'monospace Bold Italic';stroke-width:0.26458332;fill:#ffffff;">Keitha</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.58333302px;line-height:1.25;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="186.99998"
+       y="287.53946"
+       id="text4542"><tspan
+         sodipodi:role="line"
+         id="tspan4540"
+         x="186.99998"
+         y="287.53946"
+         style="fill:#ffffff;stroke-width:0.26458332">Youtube: BanSci</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.58333302px;line-height:1.25;font-family:sans-serif;text-align:center;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332"
+       x="135.51576"
+       y="246.5537"
+       id="text4546"><tspan
+         sodipodi:role="line"
+         id="tspan4544"
+         x="135.51576"
+         y="246.5537"
+         style="text-align:center;text-anchor:middle;fill:#ffffff;stroke-width:0.26458332">Loading...</tspan></text>
+  </g>
+</svg>
